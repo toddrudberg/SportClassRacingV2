@@ -13,20 +13,14 @@ namespace SportClassAnalyzer
 
         public class cFormState
         {
-            public static string sPylonFile = @""C:\LocalDev\SportClassRacingV2\SportClassOuterCourse.gpx"";
-            //public static string sRaceDataFile = @"C:\LocalDev\SportClassRacing\TestData.gpx";
-            //public static string sRaceDataFile = @"C:\LocalDev\SportClassRacing\Slater Data\20241018_104841.gpx";
+            public static string sPylonFile = @"C:\LocalDev\SportClassRacingV2\SportClassOuterCourse - Middle.gpx";
             public static string sRaceDataFile = @"C:\LocalDev\SportClassRacing\Slater Data\20241018_142045.gpx";
-            //public static string sRaceDataFile = @"C:\LocalDev\SportClassRacing\Slater Data\20241018_142045.gpx";
         }
-
-        //public List<pylonWpt> myPylons = new List<pylonWpt>();
-
-
         public cPylons myPylons = new cPylons();
         public cRaceData myRaceData = new cRaceData();
 
         public List<cLapCrossings> myLapCrossings = new List<cLapCrossings>();
+        public List<cLapCrossings> myStartGateCrossings = new List<cLapCrossings>();
 
         #region Console Output
         [DllImport("kernel32.dll")]
@@ -86,7 +80,7 @@ namespace SportClassAnalyzer
             int screenWidth = Screen.PrimaryScreen.Bounds.Width;
             int screenHeight = Screen.PrimaryScreen.Bounds.Height;
             this.Size = new Size((int)(screenWidth * 0.8), (int)(screenHeight * 0.9)); // 75% of screen size
-            // Set the form's position at the top right of the screen
+                                                                                       // Set the form's position at the top right of the screen
             this.StartPosition = FormStartPosition.Manual;
             this.Location = new Point(screenWidth - this.Width, 0); // Right edge, top of screen
 
@@ -146,10 +140,10 @@ namespace SportClassAnalyzer
             }
 
             gpx raceData = null;
-            if(buildFromRaceBox)
+            if (buildFromRaceBox)
             {
                 Console.WriteLine("Loading RaceBox Data");
-                List<cRaceBoxRecord> raceBoxRecords =  cRaceBoxParser.ParseCsv(cFormState.sRaceDataFile);
+                List<cRaceBoxRecord> raceBoxRecords = cRaceBoxParser.ParseCsv(cFormState.sRaceDataFile);
                 Console.WriteLine("Converting RaceBox Data to GPX");
                 raceData = cRaceBoxParser.ConvertRaceBoxToGpx(raceBoxRecords);
 
@@ -158,7 +152,7 @@ namespace SportClassAnalyzer
             {
                 Console.WriteLine("Loading Race Data");
                 // Load the race data
-                
+
                 XmlSerializer raceSerializer = new XmlSerializer(typeof(gpx));
                 using (FileStream fs = new FileStream(cFormState.sRaceDataFile, FileMode.Open))
                 {
@@ -175,7 +169,7 @@ namespace SportClassAnalyzer
             myRaceData.myRaceData = raceData.trk.trkseg.ToList();
             myRaceData.assignCartisianCoordinates(myPylons.homePylon());
             myRaceData.calculateSpeedsAndTruncate(100);
-            myRaceData.detectLaps(myPylons, out myLapCrossings);
+            myRaceData.detectLaps(myPylons, out myLapCrossings, out myStartGateCrossings);
         }
 
         private async Task DisplayMap()
@@ -201,10 +195,26 @@ namespace SportClassAnalyzer
         {
             if (args.IsSuccess)
             {
+                //try
+                //{
+                //    if (webView2Control.CoreWebView2 != null)
+                //    {
+                //        var result = webView2Control.ExecuteScriptAsync("clearMap();");
+                //        Console.WriteLine($"Script executed with result: {result}");
+                //    }
+                //    else
+                //    {
+                //        Console.WriteLine("CoreWebView2 is not initialized.");
+                //    }
+                //}
+                //catch (Exception ex)
+                //{
+                //    Console.WriteLine($"Error executing script: {ex.Message}");
+                //}
                 Console.WriteLine("Drawing Pylons");
                 PlotPylons(myPylons);
                 Console.WriteLine("Drawing Race Data");
-                PlotRaceData(myRaceData.myRaceData, myLapCrossings);
+                PlotRaceData(myRaceData.myRaceData, myLapCrossings, myStartGateCrossings);
                 Console.WriteLine("Map Updated");
             }
         }
@@ -251,8 +261,17 @@ namespace SportClassAnalyzer
             string script2 = $"drawLineBetweenPoints({lat1}, {lon1}, {lat2}, {lon2}, 'black');";
             await webView2Control.ExecuteScriptAsync(script2);
 
+
+            List<pylonWpt> gatePylons = pylons.gatePylons();
+            lat1 = (double)gatePylons[0].lat;
+            lon1 = (double)gatePylons[0].lon;
+            lat2 = (double)gatePylons[1].lat;
+            lon2 = (double)gatePylons[1].lon;
+            script2 = $"drawLineBetweenPoints({lat1}, {lon1}, {lat2}, {lon2}, 'green');";
+            await webView2Control.ExecuteScriptAsync(script2);
+
             // make a list of pylons not including the start finish pylon
-            var pylonsList = pylons.pylonWpts.Where(p => p.name != "StartFinish").ToList();
+            var pylonsList = pylons.outerCoursePylons();
             // draw lines between the pylonsList
             for (int i = 0; i < pylonsList.Count; i++)
             {
@@ -279,29 +298,11 @@ namespace SportClassAnalyzer
         }
 
         // Define different colors for each lap
-        //string[] lapColors = { "red", "blue", "green", "purple", "orange" };
-
-        //int lapIndex = 0; // To track lap number
-
-        //public async void PlotRaceData(List<racePoint> myRaceData)
-        //{
-        //    foreach (var dataPoint in myRaceData)
-        //    {
-        //        // Convert latitude and longitude from decimal to double
-        //        double lat = (double)dataPoint.lat;
-        //        double lon = (double)dataPoint.lon;
-
-        //        // Inject JavaScript to add marker to the map without time
-        //        string script = $"addRaceDataPoint({lat}, {lon});";
-        //        await webView2Control.ExecuteScriptAsync(script);
-        //    }
-        //}
-        // Define different colors for each lap
-        string[] lapColors = { "red", "blue", "green", "purple", "orange", "yellow", "magenta", "cyan" };
+        string[] lapColors = { "red", "blue", "black", "purple", "orange", "yellow", "magenta", "cyan" };
 
         int lapIndex = 0; // To track lap number
 
-        public async void PlotRaceData(List<racePoint> myRaceData, List<cLapCrossings> lapCrossings)
+        public async void PlotRaceData(List<racePoint> myRaceData, List<cLapCrossings> lapCrossings, List<cLapCrossings> startGateCrossings)
         {
             lapIndex = 1;
 
@@ -310,6 +311,20 @@ namespace SportClassAnalyzer
 
             // Call JavaScript to start a new lap (reset points for new polyline)
             await webView2Control.ExecuteScriptAsync("startNewLap();");
+
+            // plot startGateCrossings in green until first lap crossing
+            for (int i = 0; i < lapCrossings[0].dataPoint; i++)
+            {
+                // Convert latitude and longitude from decimal to double
+                double lat = (double)myRaceData[i].lat;
+                double lon = (double)myRaceData[i].lon;
+                //Thread.Sleep(50);
+
+                // Inject JavaScript to add the marker to the map with lap-specific color
+                string script = $"addRaceDataPoint({lat}, {lon}, 'green');";
+                await webView2Control.ExecuteScriptAsync(script);
+            }
+
 
             for (int nLap = 0; nLap < lapCrossings.Count - 1; nLap++)
             {
@@ -350,6 +365,13 @@ namespace SportClassAnalyzer
             }
         }
 
+        public void clearAllData()
+        {
+            myPylons = new cPylons();
+            myRaceData.myRaceData.Clear();
+            myLapCrossings.Clear();
+            myStartGateCrossings.Clear();
+        }
 
         private async void openToolStripMenuItem_Click(object sender, EventArgs e)
         {
@@ -359,15 +381,7 @@ namespace SportClassAnalyzer
             openFileDialog1.ShowDialog();
             if (openFileDialog1.FileName != "")
             {
-                myLapCrossings.Clear();
-                myPylons.pylonWpts.Clear();
-                myRaceData.myRaceData.Clear();
-                if (webView2Control.CoreWebView2 != null)
-                {
-                    await webView2Control.ExecuteScriptAsync("clearMap();");
-                }
-
-
+                clearAllData();
                 cFormState.sRaceDataFile = openFileDialog1.FileName;
                 buildRace();
                 await DisplayMap();
@@ -382,14 +396,7 @@ namespace SportClassAnalyzer
             openFileDialog1.ShowDialog();
             if (openFileDialog1.FileName != "")
             {
-                myLapCrossings.Clear();
-                myPylons.pylonWpts.Clear();
-                myRaceData.myRaceData.Clear();
-                if (webView2Control.CoreWebView2 != null)
-                {
-                    webView2Control.CoreWebView2.ExecuteScriptAsync("clearMap();");
-                }
-
+                clearAllData();
                 cFormState.sRaceDataFile = openFileDialog1.FileName;
                 buildRace(true);
                 await DisplayMap();

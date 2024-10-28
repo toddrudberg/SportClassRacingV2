@@ -49,12 +49,26 @@ namespace SportClassAnalyzer
         }
 
 
-        public void detectLaps(cPylons pylons, out List<cLapCrossings> lapCrossings)
+        public void detectLaps(cPylons pylons, out List<cLapCrossings> lapCrossings, out List<cLapCrossings> startGateCrossings)
         {
             cPoint homePylon = pylons.homePylonPoint();
             cPoint startFinishPylon = pylons.startFinishPylonPoint();
 
             //List<cLapCrossings> lapCrossings = new List<cLapCrossings>();
+
+            List<cPoint> startGates = pylons.gatePylonPoints();
+            List<cLapCrossings> test = new List<cLapCrossings>();
+            int numStartCrossings = LineCrossingDetector.DetectCrossings(myRaceData, startGates[0], startGates[1], out startGateCrossings);
+            if( numStartCrossings > 0)
+            {
+                //remove all data points before the first start gate crossing
+                myRaceData = myRaceData.GetRange(startGateCrossings[0].dataPoint, myRaceData.Count - startGateCrossings[0].dataPoint);            
+            }
+            else
+            {
+                Console.WriteLine("No start gate crossings detected");
+            }
+
             int crossings = LineCrossingDetector.DetectCrossings(myRaceData, homePylon, startFinishPylon, out lapCrossings);
 
             if( crossings == 0)
@@ -72,36 +86,57 @@ namespace SportClassAnalyzer
             if (lapCrossings.Count > 1)
             {
 
-                for (int i = 1; i < lapCrossings.Count; i++)
+                for (int i = 0; i < lapCrossings.Count; i++)
                 {
-                    int startOfLap = lapCrossings[i - 1].dataPoint;
-                    int endOfLap = lapCrossings[i].dataPoint;
+                    int startOfLap = 0;
+                    int endOfLap = 0;
+
+                    if(i == 0)
+                    {
+                        if( numStartCrossings == 0)
+                        {
+                            continue;
+                        }
+                    }
+                    else
+                    {
+                        startOfLap = lapCrossings[i - 1].dataPoint;
+                    }
+                    
+                    endOfLap = lapCrossings[i].dataPoint;
+
+
                     List<racePoint> lapData = myRaceData.GetRange(startOfLap, endOfLap - startOfLap);
                     //calculate lap data
                     cLap lap = new cLap();
-                    lap.maxSpeed = lapData.Max(p => p.speedMPH);
-                    lap.elapsedTime = lapCrossings[i].crossingTime - lapCrossings[i - 1].crossingTime;
+                    lap.maxSpeed = lapData.Max(p => p.speedMPH);                    
                     lap.averageSpeed = lapData.Average(p => p.speedMPH);
                     lap.distanceFlown = lapData
                         .Zip(lapData.Skip(1), (previous, current) =>
                             Math.Sqrt(Math.Pow(current.X - previous.X, 2) + Math.Pow(current.Y - previous.Y, 2)))
-                        .Sum();
-
-                    myLaps.Add(lap);
-
+                        .Sum();                  
                     //output lap data to Console:
                     Console.WriteLine();
-                    Console.WriteLine($"Lap {i}");
-                    Console.WriteLine($"Elapsed Time: {Math.Round(lap.elapsedTime, 2).ToString("F2")} seconds");
-                    Console.WriteLine($"PTP Speed: {(pylons.segments.Sum() / lap.elapsedTime * 3600 / 5280).ToString("F4")} mph");
-                    Console.WriteLine($"Average Speed: {Math.Round(lap.averageSpeed,4)} mph");
-                    Console.WriteLine($"Max Speed: {Math.Round(lap.maxSpeed)} mph");
-                    Console.WriteLine($"Distance Flown: {Math.Round(lap.distanceFlown / 5280, 2).ToString("F2")} miles");
+                    if(i == 0)
+                    {
+                        Console.WriteLine("Start Lap");
+                        Console.WriteLine($"Average Speed: {Math.Round(lap.averageSpeed,4)} mph");
+                        Console.WriteLine($"Max Speed: {Math.Round(lap.maxSpeed)} mph");
+                        Console.WriteLine($"Distance Flown: {Math.Round(lap.distanceFlown / 5280, 2).ToString("F2")} miles");   
+                    }
+                    else
+                    {
+                        lap.elapsedTime = lapCrossings[i].crossingTime - lapCrossings[i - 1].crossingTime;
+                        myLaps.Add(lap);
+                        Console.WriteLine($"Lap {i}");
+                        Console.WriteLine($"Elapsed Time: {Math.Round(lap.elapsedTime, 2).ToString("F2")} seconds");
+                        Console.WriteLine($"PTP Speed: {(pylons.segments.Sum() / lap.elapsedTime * 3600 / 5280).ToString("F4")} mph");
+                        Console.WriteLine($"Average Speed: {Math.Round(lap.averageSpeed,4)} mph");
+                        Console.WriteLine($"Max Speed: {Math.Round(lap.maxSpeed)} mph");
+                        Console.WriteLine($"Distance Flown: {Math.Round(lap.distanceFlown / 5280, 2).ToString("F2")} miles");                    }                    
                 }
                 Console.WriteLine();
             }
-
-            //myRaceData = myRaceData.GetRange(startOfRace, endOfRace - startOfRace);
         }
 
         public void calculateSpeedsAndTruncate(double limitSpeed)
