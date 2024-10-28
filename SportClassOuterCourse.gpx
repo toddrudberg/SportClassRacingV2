@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<pylons version="1.1" creator="ManualConversion">
+  <ele>1350</ele>
+  <wpt lat="32.288416" lon="-106.920656"><name>Home</name></wpt>
+  <wpt lat="32.291205" lon="-106.908747"><name>P1</name></wpt>
+  <wpt lat="32.300209" lon="-106.904944"><name>P2</name></wpt>
+  <wpt lat="32.307352" lon="-106.908115"><name>P3</name></wpt>
+  <wpt lat="32.312252" lon="-106.925452"><name>P4</name></wpt>
+  <wpt lat="32.313670" lon="-106.942690"><name>P5</name></wpt>
+  <wpt lat="32.300650" lon="-106.955600"><name>P6</name></wpt>
+  <wpt lat="32.289329" lon="-106.939065"><name>P7</name></wpt>
+  <wpt lat="32.285286" lon="-106.920660"><name>StartFinish</name></wpt>
+  <wpt lat="32.279343" lon="-106.911869"><name>Gate1</name></wpt>
+  <wpt lat="32.278689" lon="-106.874525"><name>Gate2</name></wpt>
+</pylons>
