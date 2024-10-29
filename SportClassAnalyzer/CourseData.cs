@@ -71,7 +71,7 @@ namespace SportClassAnalyzer
         {
             List<pylonWpt> coursePylons = pylonWpts.Where(p => p.name != "Gate1" && p.name != "Gate2" && p.name != "StartFinish").ToList();
             // remove all points that start with MP and IP
-            coursePylons = coursePylons.Where(p => !p.name.StartsWith("MP") && !p.name.StartsWith("IP")).ToList();
+            coursePylons = coursePylons.Where(p => !p.name.StartsWith("mP") && !p.name.StartsWith("iP")).ToList();
             return coursePylons;
         }
 
@@ -79,9 +79,17 @@ namespace SportClassAnalyzer
         {
             List<pylonWpt> coursePylons = pylonWpts.Where(p => p.name != "Gate1" && p.name != "Gate2" && p.name != "StartFinish").ToList();
             // remove all points that start with MP and IP
-            coursePylons = coursePylons.Where(p => !p.name.StartsWith("MP") && !p.name.StartsWith("IP")).ToList();
+            coursePylons = coursePylons.Where(p => !p.name.StartsWith("oP") && !p.name.StartsWith("iP")).ToList();
             return coursePylons;
             
+        }
+        public List<pylonWpt> innerCoursePylons()
+        {
+            List<pylonWpt> coursePylons = pylonWpts.Where(p => p.name != "Gate1" && p.name != "Gate2" && p.name != "StartFinish").ToList();
+            // remove all points that start with MP and IP
+            coursePylons = coursePylons.Where(p => !p.name.StartsWith("oP") && !p.name.StartsWith("mP")).ToList();
+            return coursePylons;
+
         }
         public cPoint startFinishPylonPoint()
         {
