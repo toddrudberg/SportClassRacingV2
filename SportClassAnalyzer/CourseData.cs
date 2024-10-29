@@ -12,6 +12,7 @@ namespace SportClassAnalyzer
     {
         public List<pylonWpt> pylonWpts = new List<pylonWpt>();
         public List<double> segments = new List<double>();
+        public double elevationInFeet = 4450;
         public cPylons() { }
 
         public pylonWpt homePylon()
