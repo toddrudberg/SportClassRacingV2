@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<pylons version="1.1" creator="ManualConversion">
+  <ele>1350</ele>
+  <wpt lat="32.288416" lon="-106.920656"><name>Home</name></wpt>
+  <wpt lat="32.291205" lon="-106.908747"><name>oP1</name></wpt>
+  <wpt lat="32.300209" lon="-106.904944"><name>oP2</name></wpt>
+  <wpt lat="32.307352" lon="-106.908115"><name>oP3</name></wpt>
+  <wpt lat="32.312252" lon="-106.925452"><name>oP4</name></wpt>
+  <wpt lat="32.313670" lon="-106.942690"><name>oP5</name></wpt>
+  <wpt lat="32.300650" lon="-106.955600"><name>oP6</name></wpt>
+  <wpt lat="32.289329" lon="-106.939065"><name>oP7</name></wpt>
+  <wpt lat="32.285286" lon="-106.920660"><name>StartFinish</name></wpt>
+  <wpt lat="32.279343" lon="-106.911869"><name>Gate1</name></wpt>
+  <wpt lat="32.278689" lon="-106.874525"><name>Gate2</name></wpt>
+  <wpt lat="32.291205" lon="-106.908747"><name>mP1</name></wpt>
+  <wpt lat="32.300209" lon="-106.904944"><name>mP2</name></wpt>
+  <wpt lat="32.307352" lon="-106.908115"><name>mP3</name></wpt>
+  <wpt lat="32.312252" lon="-106.925452"><name>mP4</name></wpt>
+  <wpt lat="32.307899" lon="-106.941432"><name>mP5</name></wpt>
+  <wpt lat="32.300463" lon="-106.945405"><name>mP6</name></wpt>
+  <wpt lat="32.291205" lon="-106.908747"><name>iP1</name></wpt>  
+  <wpt lat="32.299080" lon="-106.907600"><name>iP2</name></wpt>
+  <wpt lat="32.302710" lon="-106.916500"><name>iP3</name></wpt>
+  <wpt lat="32.301250" lon="-106.925330"><name>iP4</name></wpt>
+  <wpt lat="32.295200" lon="-106.932470"><name>iP5</name></wpt>
+  <wpt lat="32.290200" lon="-106.930640"><name>iP6</name></wpt>
+</pylons>

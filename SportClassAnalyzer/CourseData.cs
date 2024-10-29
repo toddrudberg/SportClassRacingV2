@@ -49,6 +49,48 @@ namespace SportClassAnalyzer
             }
             return startFinishPylon;
         }
+
+        public List<pylonWpt> gatePylons()
+        {
+            List<pylonWpt> gatePylons = pylonWpts.Where(p => p.name == "Gate1" || p.name == "Gate2").ToList();
+            return gatePylons;
+        }
+
+        public List<cPoint> gatePylonPoints()
+        {
+            List<pylonWpt> gatePylons = this.gatePylons();
+            List<cPoint> gatePylonPoints = new List<cPoint>();
+            foreach (var pylon in gatePylons)
+            {
+                gatePylonPoints.Add(new cPoint(pylon.X, pylon.Y));
+            }
+            return gatePylonPoints;
+        }
+
+        public List<pylonWpt> outerCoursePylons()
+        {
+            List<pylonWpt> coursePylons = pylonWpts.Where(p => p.name != "Gate1" && p.name != "Gate2" && p.name != "StartFinish").ToList();
+            // remove all points that start with MP and IP
+            coursePylons = coursePylons.Where(p => !p.name.StartsWith("mP") && !p.name.StartsWith("iP")).ToList();
+            return coursePylons;
+        }
+
+        public List<pylonWpt> middleCoursePylons()
+        {
+            List<pylonWpt> coursePylons = pylonWpts.Where(p => p.name != "Gate1" && p.name != "Gate2" && p.name != "StartFinish").ToList();
+            // remove all points that start with MP and IP
+            coursePylons = coursePylons.Where(p => !p.name.StartsWith("oP") && !p.name.StartsWith("iP")).ToList();
+            return coursePylons;
+            
+        }
+        public List<pylonWpt> innerCoursePylons()
+        {
+            List<pylonWpt> coursePylons = pylonWpts.Where(p => p.name != "Gate1" && p.name != "Gate2" && p.name != "StartFinish").ToList();
+            // remove all points that start with MP and IP
+            coursePylons = coursePylons.Where(p => !p.name.StartsWith("oP") && !p.name.StartsWith("mP")).ToList();
+            return coursePylons;
+
+        }
         public cPoint startFinishPylonPoint()
         {
             pylonWpt startFinishPylon = this.startFinishPylon();
@@ -94,8 +136,8 @@ namespace SportClassAnalyzer
         {
             int output = 0;
             //let's use the where statement to get all pylons not named "StartFinish"
-            var pylons = pylonWpts.Where(p => p.name != "StartFinish").ToList();
-            
+            var pylons = this.outerCoursePylons();
+            //remove Gate1 and Gate2 from the list
             // calculate the distance between each pylon and the next pylon using the X, Y data
             for (int i = 0; i < pylons.Count - 1; i++)
             {

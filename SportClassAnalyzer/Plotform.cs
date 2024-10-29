@@ -48,13 +48,13 @@ namespace SportClassAnalyzer
         //    this.Controls.Add(plotView);
         //}
 
-        public plotForm(PlotModel plotModel)
+        public plotForm(PlotModel plotModel, System.Windows.Forms.Form host)
         {
             InitializeComponent();
-            LoadPlot(plotModel);
+            LoadPlot(plotModel, host);
         }
 
-        private void LoadPlot(PlotModel plotModel)
+        private void LoadPlot(PlotModel plotModel, System.Windows.Forms.Form host)
         {
             // Create a PlotView control and set the received PlotModel
             var plotView = new PlotView
@@ -64,7 +64,7 @@ namespace SportClassAnalyzer
             };
 
             // Add the PlotView control to the form
-            this.Controls.Add(plotView);
+            host.Controls.Add(plotView);
         }
 
         private void plotForm_Load(object sender, EventArgs e)
