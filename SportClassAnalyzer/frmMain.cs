@@ -95,10 +95,6 @@ namespace SportClassAnalyzer
 
         private async void frmMain_Load(object sender, EventArgs e)
         {
-            // Wait until buildRace is complete before displaying the map
-            //await raceBuiltCompletionSource.Task;
-            //await DisplayMap();
-
 
         }
 
@@ -171,8 +167,18 @@ namespace SportClassAnalyzer
             plotRaceDataPlotModel(myRaceData.myRaceData, myLapCrossings, myStartGateCrossings, plotModel);
 
             // Pass the generated PlotModel to the new form
-            var plotForm = new SportClassAnalyzer.plotForm(plotModel, this);
-            plotForm.Show(); // or plotForm.Show() if you want it non-modal
+            //var plotForm = new SportClassAnalyzer.plotForm(plotModel, this);
+            //plotForm.Show(); // or plotForm.Show() if you want it non-modal
+
+            // Create a PlotView control and set the received PlotModel
+            var plotView = new PlotView
+            {
+                Model = plotModel,
+                Dock = DockStyle.Fill // Set to fill the form
+            };
+
+            // Add the PlotView control to the form
+            this.Controls.Add(plotView);
 
             this.listBox1.Hide();
             this.listBox2.Hide();
