@@ -1,4 +1,5 @@
-﻿using System;
+﻿using OxyPlot;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -9,18 +10,58 @@ namespace SportClassAnalyzer
     public class cLap
     {
         public double maxSpeed;
+        public double ptpSpeed;
         public double elapsedTime;
         public double averageSpeed;
         public double distanceFlown;
+        public DateTime startTime;
+        public DateTime endTime;
+        public bool isStartLap = false;
+
+        public static string ToStringAll(List<cLap> laps, RacePlotModel racePlotModel)
+        {
+            string result = string.Empty;
+
+            for (int i = 0; i < laps.Count; i++)
+            {
+                cLap lap = laps[i];
+                if (lap.isStartLap)
+                {
+                    result += "Start Lap: (Green)\n";
+                    TimeZoneInfo mountainTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Mountain Standard Time");
+                    DateTime localStartTime = TimeZoneInfo.ConvertTimeFromUtc(lap.startTime, mountainTimeZone);
+                    result += $"Start Time: {localStartTime:yyyy-MM-dd HH:mm:ss.fff}\n";
+                }
+                else
+                {
+                    OxyColor lapColor = racePlotModel.oxyColors[i - 1 % racePlotModel.oxyColors.Count]; // Cycle through colors if needed
+                    result += $"Lap {i}: ({racePlotModel.getColorName(lapColor)})\n";
+                    result += $"Elapsed Time: {lap.elapsedTime.ToString("F3")} sec\n";
+                    result += $"PTP Speed: {lap.ptpSpeed.ToString("F3")} mph\n";
+                }
+                result += $"Max Speed: {lap.maxSpeed.ToString("F0")} mph\n";
+                result += $"Average Speed: {lap.averageSpeed.ToString("F3")} mph\n";
+                result += $"Distance Flown: {(lap.distanceFlown / 5280).ToString("F3")} miles\n";
+
+                if (i == laps.Count - 1)
+                {
+                    TimeZoneInfo mountainTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Mountain Standard Time");
+                    DateTime localEndTime = TimeZoneInfo.ConvertTimeFromUtc(lap.endTime, mountainTimeZone);
+                    result += $"End Time: {localEndTime:yyyy-MM-dd HH:mm:ss.fff}\n";
+                }
+                result += "\n";
+            }
+            return result;
+        }  
     }
 
     public class cLapCrossings
     {
         public int dataPoint;
-        public double crossingTime;
+        public DateTime crossingTime;
         public cPoint crossingPoint;
 
-        public cLapCrossings(int dataPoint, double crossingTime, cPoint crossingPoint)
+        public cLapCrossings(int dataPoint, DateTime crossingTime, cPoint crossingPoint)
         {
             this.dataPoint = dataPoint;
             this.crossingTime = crossingTime;
@@ -30,12 +71,12 @@ namespace SportClassAnalyzer
 
     public class cRaceData
     {
-        public List<racePoint> myRaceData = new List<racePoint>();
+        public List<racePoint> racePoints = new List<racePoint>();
         public List<cLap> myLaps = new List<cLap>();
 
         public void assignCartisianCoordinates(pylonWpt homePylon)
         {
-            foreach (racePoint dp in myRaceData)
+            foreach (racePoint dp in racePoints)
             {
                 // Calculate distance and bearing from home pylon to this pylon
                 double distance = cLatLon.HaversineDistance(homePylon.lat, homePylon.lon, dp.lat, dp.lon, dp.altitudeInFeet);
@@ -51,6 +92,7 @@ namespace SportClassAnalyzer
 
         public void detectLaps(cPylons pylons, out List<cLapCrossings> lapCrossings, out List<cLapCrossings> startGateCrossings)
         {
+            myLaps.Clear();
             cPoint homePylon = pylons.homePylonPoint();
             cPoint startFinishPylon = pylons.startFinishPylonPoint();
 
@@ -58,18 +100,18 @@ namespace SportClassAnalyzer
 
             List<cPoint> startGates = pylons.gatePylonPoints();
             List<cLapCrossings> test = new List<cLapCrossings>();
-            int numStartCrossings = LineCrossingDetector.DetectCrossings(myRaceData, startGates[0], startGates[1], out startGateCrossings);
+            int numStartCrossings = LineCrossingDetector.DetectCrossings(racePoints, startGates[0], startGates[1], out startGateCrossings);
             if( numStartCrossings > 0)
             {
                 //remove all data points before the first start gate crossing
-                myRaceData = myRaceData.GetRange(startGateCrossings[0].dataPoint, myRaceData.Count - startGateCrossings[0].dataPoint);            
+                racePoints = racePoints.GetRange(startGateCrossings[0].dataPoint, racePoints.Count - startGateCrossings[0].dataPoint);            
             }
             else
             {
                 Console.WriteLine("No start gate crossings detected");
             }
 
-            int crossings = LineCrossingDetector.DetectCrossings(myRaceData, homePylon, startFinishPylon, out lapCrossings);
+            int crossings = LineCrossingDetector.DetectCrossings(racePoints, homePylon, startFinishPylon, out lapCrossings);
 
             if( crossings == 0)
             {
@@ -78,7 +120,6 @@ namespace SportClassAnalyzer
             }
             Console.WriteLine("Lap detection complete");
             Console.WriteLine($"Number of laps detected: {crossings}");
-            //truncate myRaceData to only include points between startOfRace and endOfRace
             int startOfRace = lapCrossings[0].dataPoint;
             int endOfRace = lapCrossings[lapCrossings.Count - 1].dataPoint;
 
@@ -105,10 +146,19 @@ namespace SportClassAnalyzer
                     
                     endOfLap = lapCrossings[i].dataPoint;
 
-
-                    List<racePoint> lapData = myRaceData.GetRange(startOfLap, endOfLap - startOfLap);
+                    List<racePoint> lapData = racePoints.GetRange(startOfLap, endOfLap - startOfLap);
                     //calculate lap data
+                    //public double maxSpeed;-
+                    //public double ptpSpeed;-
+                    //public double elapsedTime;-
+                    //public double averageSpeed;-
+                    //public double distanceFlown;-
+                    //public DateTime startTime;-
+                    //public DateTime endTime;-
+                    //public bool isStartLap;-
                     cLap lap = new cLap();
+                    lap.startTime = lapData[0].time;
+                    lap.endTime = lapCrossings[i].crossingTime;
                     lap.maxSpeed = lapData.Max(p => p.speedMPH);                    
                     lap.averageSpeed = lapData.Average(p => p.speedMPH);
                     lap.distanceFlown = lapData
@@ -119,18 +169,27 @@ namespace SportClassAnalyzer
                     Console.WriteLine();
                     if(i == 0)
                     {
+                        lap.isStartLap = true;
                         Console.WriteLine("Start Lap");
                         Console.WriteLine($"Average Speed: {Math.Round(lap.averageSpeed,4)} mph");
                         Console.WriteLine($"Max Speed: {Math.Round(lap.maxSpeed)} mph");
-                        Console.WriteLine($"Distance Flown: {Math.Round(lap.distanceFlown / 5280, 2).ToString("F2")} miles");   
+                        Console.WriteLine($"Distance Flown: {Math.Round(lap.distanceFlown / 5280, 2).ToString("F2")} miles");
+                        myLaps.Add(lap);
                     }
                     else
                     {
-                        lap.elapsedTime = lapCrossings[i].crossingTime - lapCrossings[i - 1].crossingTime;
+                        // Calculate the elapsed time as a TimeSpan
+                        TimeSpan elapsedTimeSpan = lapCrossings[i].crossingTime - lapCrossings[i - 1].crossingTime;
+
+                        // Convert the TimeSpan to milliseconds
+                        double elapsedTime = elapsedTimeSpan.TotalMilliseconds / 1000.0;
+
+                        lap.elapsedTime = elapsedTime;
+                        lap.ptpSpeed = pylons.segments.Sum() / lap.elapsedTime * 3600 / 5280;
                         myLaps.Add(lap);
                         Console.WriteLine($"Lap {i}");
                         Console.WriteLine($"Elapsed Time: {Math.Round(lap.elapsedTime, 2).ToString("F2")} seconds");
-                        Console.WriteLine($"PTP Speed: {(pylons.segments.Sum() / lap.elapsedTime * 3600 / 5280).ToString("F4")} mph");
+                        Console.WriteLine($"PTP Speed: {lap.ptpSpeed.ToString("F4")} mph");
                         Console.WriteLine($"Average Speed: {Math.Round(lap.averageSpeed,4)} mph");
                         Console.WriteLine($"Max Speed: {Math.Round(lap.maxSpeed)} mph");
                         Console.WriteLine($"Distance Flown: {Math.Round(lap.distanceFlown / 5280, 2).ToString("F2")} miles");                    }                    
@@ -143,32 +202,32 @@ namespace SportClassAnalyzer
         {
             int lastIndex = 0;
             double lastSpeed = 0;
-            myRaceData[0].speedMPH = lastSpeed;
+            racePoints[0].speedMPH = lastSpeed;
 
-            for (int i = 1; i < myRaceData.Count - 1; i++)
+            for (int i = 1; i < racePoints.Count - 1; i++)
             {
-                double distance = Math.Sqrt(Math.Pow(myRaceData[lastIndex].X - myRaceData[i].X, 2) + Math.Pow(myRaceData[lastIndex].Y - myRaceData[i].Y, 2));
+                double distance = Math.Sqrt(Math.Pow(racePoints[lastIndex].X - racePoints[i].X, 2) + Math.Pow(racePoints[lastIndex].Y - racePoints[i].Y, 2));
                 if( distance < 10)
                 {
-                    myRaceData[i].speedMPH = lastSpeed;
+                    racePoints[i].speedMPH = lastSpeed;
                     continue;
                 }
 
                 // Calculate time between two points
-                double time = (myRaceData[i].time - myRaceData[lastIndex].time).TotalSeconds;
+                double time = (racePoints[i].time - racePoints[lastIndex].time).TotalSeconds;
 
                 // Calculate speed
                 double speed = distance / time;
                 // convert ft/s to mph
                 speed = speed * 3600 / 5280;
-                myRaceData[i].speedMPH = speed;
+                racePoints[i].speedMPH = speed;
                 lastSpeed = speed;
                 lastIndex = i;
                 //Console.WriteLine($"{Math.Round(speed)} mph");
             }
 
             //truncate myRaceData to only include points where speed is greater than 100 mph
-            myRaceData = myRaceData.Where(p => p.speedMPH > limitSpeed).ToList();
+            racePoints = racePoints.Where(p => p.speedMPH > limitSpeed).ToList();
         }
 
     }

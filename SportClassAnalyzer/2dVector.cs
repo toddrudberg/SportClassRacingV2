@@ -50,7 +50,11 @@ namespace SportClassAnalyzer
                     double dtime1 = time1.TotalSeconds;
                     double dtime2 = time2.TotalSeconds;
                     double dtime = dtime1 + (dtime2 - dtime1) * distance1 / (distance1 + distance2);
-                    lapCrossings.Add(new cLapCrossings(i, dtime, intersection));
+                    // Convert interpolated time in seconds back to a TimeSpan
+                    TimeSpan intersectionTimeOfDay = TimeSpan.FromSeconds(dtime);
+                    // Optional: Convert to DateTime if you want the full date and time
+                    DateTime intersectionDateTime = rp1.time.Date + intersectionTimeOfDay;
+                    lapCrossings.Add(new cLapCrossings(i, intersectionDateTime, intersection));
                     crossings.Add(intersection);
                     Console.WriteLine($"Crossing detected at: X={intersection.X}, Y={intersection.Y}");
                 }
