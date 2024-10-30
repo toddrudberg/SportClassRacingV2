@@ -146,6 +146,7 @@ namespace SportClassAnalyzer
             myRaceData.assignCartisianCoordinates(myPylons.homePylon());
             myRaceData.calculateSpeedsAndTruncate(100);
             myRaceData.detectLaps(myPylons, out myLapCrossings, out myStartGateCrossings);
+            myRaceData.checkForCourseCuts(myPylons, myLapCrossings, myStartGateCrossings, myRaceData.myLaps);
 
             RacePlotModel racePlotModel = new RacePlotModel();
 

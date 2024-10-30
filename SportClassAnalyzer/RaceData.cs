@@ -17,6 +17,7 @@ namespace SportClassAnalyzer
         public DateTime startTime;
         public DateTime endTime;
         public bool isStartLap = false;
+        public int nCuts = 0;
 
         public static string ToStringAll(List<cLap> laps, RacePlotModel racePlotModel)
         {
@@ -27,7 +28,7 @@ namespace SportClassAnalyzer
                 cLap lap = laps[i];
                 if (lap.isStartLap)
                 {
-                    result += "Start Lap: (Green)\n";
+                    result += $"Start Lap: (Green) Cuts = {lap.nCuts}\n";
                     TimeZoneInfo mountainTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Mountain Standard Time");
                     DateTime localStartTime = TimeZoneInfo.ConvertTimeFromUtc(lap.startTime, mountainTimeZone);
                     result += $"Start Time: {localStartTime:yyyy-MM-dd HH:mm:ss.fff}\n";
@@ -35,7 +36,7 @@ namespace SportClassAnalyzer
                 else
                 {
                     OxyColor lapColor = racePlotModel.oxyColors[i - 1 % racePlotModel.oxyColors.Count]; // Cycle through colors if needed
-                    result += $"Lap {i}: ({racePlotModel.getColorName(lapColor)})\n";
+                    result += $"Lap {i}: ({racePlotModel.getColorName(lapColor)} Cuts = {lap.nCuts})\n";
                     result += $"Elapsed Time: {lap.elapsedTime.ToString("F3")} sec\n";
                     result += $"PTP Speed: {lap.ptpSpeed.ToString("F3")} mph\n";
                 }
@@ -89,6 +90,71 @@ namespace SportClassAnalyzer
             }
         }
 
+        public void checkForCourseCuts(cPylons pylons, List<cLapCrossings> lapCrossings, List<cLapCrossings> startGateCrossings, List<cLap> laps)
+        {
+            var coursePylons = pylons.outerCoursePylons();
+
+            
+            List<cLapCrossings> cuts;
+
+            if (lapCrossings.Count > 1)
+            {
+                for (int i = 0; i < lapCrossings.Count; i++)
+                {
+                    int startOfLap = 0;
+                    int endOfLap = 0;
+                    int nPylonCuts = 0;
+
+                    if (i == 0)
+                    {
+                        if (startGateCrossings.Count == 0)
+                        {
+                            continue;
+                        }
+                    }
+                    else
+                    {
+                        startOfLap = lapCrossings[i - 1].dataPoint;
+                    }
+
+                    endOfLap = lapCrossings[i].dataPoint;
+
+                    List<racePoint> lapData = racePoints.GetRange(startOfLap, endOfLap - startOfLap);
+                    int crossingSegment = 0;
+                    bool insideCourse = false;
+                    for (int j = 0; j < coursePylons.Count - 1; j++)
+                    {
+                        cPoint p1 = new cPoint(coursePylons[j].X, coursePylons[j].Y);
+                        cPoint p2 = new cPoint(coursePylons[j + 1].X, coursePylons[j + 1].Y);
+                        int cut = LineCrossingDetector.DetectCrossings(lapData, p1, p2, out cuts);
+                        if (insideCourse)
+                        {
+                            if (cut == 0)
+                            {
+                                nPylonCuts++;
+                            }
+                            else if (cut == 1)
+                            {
+                                insideCourse = false;
+                            }
+                        }
+                        else
+                        {
+                            if (cut == 1 )
+                            {
+                                nPylonCuts++;
+                                insideCourse = true;
+                            }
+                            if (cut == 2 )
+                            {
+                                nPylonCuts++;
+                            }
+                        }
+                    }                 
+                    myLaps[i].nCuts = nPylonCuts;
+                }
+            }
+        }
 
         public void detectLaps(cPylons pylons, out List<cLapCrossings> lapCrossings, out List<cLapCrossings> startGateCrossings)
         {

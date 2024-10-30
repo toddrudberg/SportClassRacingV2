@@ -234,15 +234,15 @@ namespace SportClassAnalyzer
             plotModel.Series.Add(lineSeries);
 
 
-            var startGates = pylons.gatePylonPoints();
-            if( startGates.Count == 2)
-            {
-                //draw a green line between the start gates
-                var lineSeries2 = new LineSeries { Color = OxyColors.Green };
-                lineSeries2.Points.Add(new DataPoint((double)startGates[0].X, (double)startGates[0].Y));
-                lineSeries2.Points.Add(new DataPoint((double)startGates[1].X, (double)startGates[1].Y));
-                plotModel.Series.Add(lineSeries2);
-            }
+            //var startGates = pylons.gatePylonPoints();
+            //if( startGates.Count == 2)
+            //{
+            //    //draw a green line between the start gates
+            //    var lineSeries2 = new LineSeries { Color = OxyColors.Green };
+            //    lineSeries2.Points.Add(new DataPoint((double)startGates[0].X, (double)startGates[0].Y));
+            //    lineSeries2.Points.Add(new DataPoint((double)startGates[1].X, (double)startGates[1].Y));
+            //    plotModel.Series.Add(lineSeries2);
+            //}
         }
         private void plotLapSummary(List<cLap> laps, PlotModel plotModel, cPoint upperLeft, cPoint lowerRight)
         {
