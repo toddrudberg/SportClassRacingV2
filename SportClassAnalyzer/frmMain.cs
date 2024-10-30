@@ -142,14 +142,14 @@ namespace SportClassAnalyzer
                 listBox2.Items.Add(gpxTrkTrkpt);
             }
 
-            myRaceData.myRaceData = raceData.trk.trkseg.ToList();
+            myRaceData.racePoints = raceData.trk.trkseg.ToList();
             myRaceData.assignCartisianCoordinates(myPylons.homePylon());
             myRaceData.calculateSpeedsAndTruncate(100);
             myRaceData.detectLaps(myPylons, out myLapCrossings, out myStartGateCrossings);
 
             RacePlotModel racePlotModel = new RacePlotModel();
 
-            racePlotModel.CreatePlotModel(this, myPylons, myRaceData.myRaceData, myLapCrossings, myStartGateCrossings);
+            racePlotModel.CreatePlotModel(this, Path.GetFileName(cFormState.sRaceDataFile), myPylons, myRaceData, myLapCrossings, myStartGateCrossings);
 
             this.listBox1.Hide();
             this.listBox2.Hide();
@@ -179,7 +179,7 @@ namespace SportClassAnalyzer
         public void clearAllData()
         {
             myPylons = new cPylons();
-            myRaceData.myRaceData.Clear();
+            myRaceData = new cRaceData();
             myLapCrossings.Clear();
             myStartGateCrossings.Clear();
         }

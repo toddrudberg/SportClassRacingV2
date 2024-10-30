@@ -11,7 +11,7 @@ namespace SportClassAnalyzer
 {
     public class RacePlotModel
     {
-        private List<OxyColor> oxyColors = new List<OxyColor>
+        public List<OxyColor> oxyColors = new List<OxyColor>
         {
             OxyColors.Blue,
             OxyColors.Red,
@@ -22,7 +22,7 @@ namespace SportClassAnalyzer
             OxyColors.Teal
         };
 
-        private Dictionary<OxyColor, string> colorNames = new Dictionary<OxyColor, string>
+        public Dictionary<OxyColor, string> colorNames = new Dictionary<OxyColor, string>
         {
             { OxyColors.Blue, "Blue" },
             { OxyColors.Red, "Red" },
@@ -34,8 +34,9 @@ namespace SportClassAnalyzer
         };
 
         private PlotView currentPlotView;
-        public void CreatePlotModel(System.Windows.Forms.Form form, cPylons pylons, List<racePoint> raceData, List<cLapCrossings> lapCrossings, List<cLapCrossings> startGateCrossings)
+        public void CreatePlotModel(System.Windows.Forms.Form form, string title, cPylons pylons, cRaceData raceData, List<cLapCrossings> lapCrossings, List<cLapCrossings> startGateCrossings)
         {
+            List<racePoint> racePoints = raceData.racePoints;
             // Remove the existing PlotView, if there is one
             if (currentPlotView != null)
             {
@@ -46,12 +47,15 @@ namespace SportClassAnalyzer
 
             var plotModel = new PlotModel
             {
-                Title = "Race Map",
+                Title = title,
 //                TitlePadding = 10 // Adjust this value as needed
             };
-            plotBackGroundImage(plotModel, pylons);
+            cPoint upperLeft;
+            cPoint lowerRight;
+            plotBackGroundImage(plotModel, pylons, out upperLeft, out lowerRight);
             plotPylons(pylons, plotModel);
-            plotRaceData(raceData, lapCrossings, startGateCrossings, plotModel);
+            plotRaceData(racePoints, lapCrossings, startGateCrossings, plotModel);
+            plotLapSummary(raceData.myLaps, plotModel, upperLeft, lowerRight);
 
             int menuBarHeight = 30; // Adjust this height based on your menu bar size
 
@@ -76,8 +80,10 @@ namespace SportClassAnalyzer
             form.Refresh();
         }
 
-        private void plotBackGroundImage(PlotModel plotModel, cPylons pylons)
+        private void plotBackGroundImage(PlotModel plotModel, cPylons pylons, out cPoint upperLeft, out cPoint lowerRight)
         {
+            upperLeft = new cPoint(0, 0);
+            lowerRight = new cPoint(0, 0);
             // Load your image
             var imagePath = @"C:\LocalDev\SportClassRacingV2\LasCrucesMap.PNG"; // Path to the Google Earth image
             byte[] imageBytes;
@@ -124,8 +130,14 @@ namespace SportClassAnalyzer
                 Position = AxisPosition.Bottom,
                 Minimum = Math.Min(upperLeftX, lowerRightX) - padding,
                 Maximum = Math.Max(upperLeftX, lowerRightX) + padding,
+                IsAxisVisible = true,
                 IsZoomEnabled = true, // Optional: Disable zoom if you want fixed limits
-                IsPanEnabled = true   // Optional: Disable panning if you want fixed limits
+                IsPanEnabled = true,   // Optional: Disable panning if you want fixed limits
+                AxislineThickness = 0.1,    // Make the axis line very thin
+                MajorTickSize = 0.5,        // Make major ticks very small
+                MinorTickSize = 0.3,        // Make minor ticks even smaller
+                FontSize = 1,               // Set a very small font size for labels
+                TitleFontSize = 1           // Set a very small font size for title
             };
 
             // Create and set Y-axis
@@ -134,8 +146,14 @@ namespace SportClassAnalyzer
                 Position = AxisPosition.Left,
                 Minimum = Math.Min(lowerRightY, upperLeftY) - padding,
                 Maximum = Math.Max(lowerRightY, upperLeftY) + padding,
+                IsAxisVisible = true,
                 IsZoomEnabled = true, // Optional: Disable zoom if you want fixed limits
-                IsPanEnabled = true   // Optional: Disable panning if you want fixed limits
+                IsPanEnabled = true,   // Optional: Disable panning if you want fixed limits
+                AxislineThickness = 0.1,    // Make the axis line very thin
+                MajorTickSize = 0.5,        // Make major ticks very small
+                MinorTickSize = 0.3,        // Make minor ticks even smaller
+                FontSize = 1,               // Set a very small font size for labels
+                TitleFontSize = 1           // Set a very small font size for title
             };
 
             // Add axes to the plot model
@@ -146,6 +164,9 @@ namespace SportClassAnalyzer
             // Calculate Width and Height based on Cartesian coordinates
             double imageWidth = lowerRightX - upperLeftX;
             double imageHeight = upperLeftY - lowerRightY;
+
+            upperLeft = new cPoint(upperLeftX, upperLeftY);
+            lowerRight = new cPoint(lowerRightX, lowerRightY);
 
             // Add the image as an annotation to scale by bounding box
             var imageAnnotation = new ImageAnnotation
@@ -223,6 +244,58 @@ namespace SportClassAnalyzer
                 plotModel.Series.Add(lineSeries2);
             }
         }
+        private void plotLapSummary(List<cLap> laps, PlotModel plotModel, cPoint upperLeft, cPoint lowerRight)
+        {
+            double percentOfWidth = 0.25;
+            double lineSpacingPercent = 0.0225; // Adjust this value based on your layout needs
+            double width = lowerRight.X - upperLeft.X;
+            double height = upperLeft.Y - lowerRight.Y;
+
+            // Add a white rectangle as a background for the Lap Summary
+            var rectangle = new RectangleAnnotation
+            {
+                Fill = OxyColors.White,
+                MinimumX = lowerRight.X - width * percentOfWidth,
+                MaximumX = lowerRight.X,
+                MinimumY = upperLeft.Y,
+                MaximumY = lowerRight.Y,
+                Layer = AnnotationLayer.BelowSeries
+            };
+            plotModel.Annotations.Add(rectangle);
+
+            // Add "Lap Summary" header text
+            double startY = upperLeft.Y - 5; // Adjust startY based on your layout needs
+            double lineSpacing = height * lineSpacingPercent; // Vertical space between lines of text
+
+            var headerText = new TextAnnotation
+            {
+                Text = "Lap Summary",
+                TextVerticalAlignment = VerticalAlignment.Top,
+                TextHorizontalAlignment = OxyPlot.HorizontalAlignment.Left,
+                TextPosition = new DataPoint(lowerRight.X - (width * (percentOfWidth - 0.01)), startY),
+                TextColor = OxyColors.Black,
+                FontSize = 16,
+                Stroke = OxyColors.Transparent
+            };
+            plotModel.Annotations.Add(headerText);
+            startY -= 2 * lineSpacing;
+            // Add lap details below the header
+            //for (int i = 0; i < laps.Count; i++)
+            {
+                //var lap = laps[i];
+                var lapText = new TextAnnotation
+                {
+                    Text = cLap.ToStringAll(laps, this), // Example lap format
+                    TextVerticalAlignment = VerticalAlignment.Top,
+                    TextHorizontalAlignment = OxyPlot.HorizontalAlignment.Left,
+                    TextPosition = new DataPoint(lowerRight.X - (width * (percentOfWidth - 0.01)), startY),
+                    TextColor = OxyColors.Black,
+                    FontSize = 9, // Slightly smaller than header
+                    Stroke = OxyColors.Transparent
+                };
+                plotModel.Annotations.Add(lapText);
+            }
+        }
 
         private void plotRaceData(List<racePoint> myRaceData, List<cLapCrossings> lapCrossings, List<cLapCrossings> startGateCrossings, PlotModel plotModel)
         {
@@ -259,6 +332,20 @@ namespace SportClassAnalyzer
                 plotModel.Series.Add(lineSeriesLaps);
             }
 
+            var scatterSeries = new ScatterSeries
+            {
+                MarkerType = MarkerType.Circle,
+                MarkerSize = 5, // Adjust the size as needed
+                MarkerFill = OxyColors.Red // Customize the color
+            };
+
+            for (int nLap = 0; nLap < lapCrossings.Count - 1; nLap++)
+            {
+                ScatterPoint crossingPoint = new (lapCrossings[nLap].crossingPoint.X, lapCrossings[nLap].crossingPoint.Y);
+                scatterSeries.Points.Add(crossingPoint);
+            }
+            plotModel.Series.Add(scatterSeries);
+
             if (lapCrossings.Count == 0)
             {
                 var lineSeriesLaps = new LineSeries { Color = OxyColors.Blue };
@@ -273,7 +360,7 @@ namespace SportClassAnalyzer
             }
         }
 
-        private string getColorName(OxyColor color)
+        public string getColorName(OxyColor color)
         {
             return colorNames.TryGetValue(color, out string name) ? name : "Unknown";
         }
