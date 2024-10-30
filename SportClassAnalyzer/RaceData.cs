@@ -28,7 +28,9 @@ namespace SportClassAnalyzer
                 cLap lap = laps[i];
                 if (lap.isStartLap)
                 {
-                    result += $"Start Lap: (Green) Cuts = {lap.nCuts}\n";
+                    result += $"Start Lap: (Green) ";
+                    result += lap.nCuts == 0 ? "No Cuts\n" : $"Cuts = {lap.nCuts}\n";
+
                     TimeZoneInfo mountainTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Mountain Standard Time");
                     DateTime localStartTime = TimeZoneInfo.ConvertTimeFromUtc(lap.startTime, mountainTimeZone);
                     result += $"Start Time: {localStartTime:yyyy-MM-dd HH:mm:ss.fff}\n";
@@ -36,7 +38,9 @@ namespace SportClassAnalyzer
                 else
                 {
                     OxyColor lapColor = racePlotModel.oxyColors[i - 1 % racePlotModel.oxyColors.Count]; // Cycle through colors if needed
-                    result += $"Lap {i}: ({racePlotModel.getColorName(lapColor)} Cuts = {lap.nCuts})\n";
+                    result += $"Lap {i}: ({racePlotModel.getColorName(lapColor)}) ";
+                    result += lap.nCuts == 0 ? "No Cuts\n" : $"Cuts = {lap.nCuts}\n";
+
                     result += $"Elapsed Time: {lap.elapsedTime.ToString("F3")} sec\n";
                     result += $"PTP Speed: {lap.ptpSpeed.ToString("F3")} mph\n";
                 }

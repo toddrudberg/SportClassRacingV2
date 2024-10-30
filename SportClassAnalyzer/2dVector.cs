@@ -54,7 +54,7 @@ namespace SportClassAnalyzer
                     TimeSpan intersectionTimeOfDay = TimeSpan.FromSeconds(dtime);
                     // Optional: Convert to DateTime if you want the full date and time
                     DateTime intersectionDateTime = rp1.time.Date + intersectionTimeOfDay;
-                    lapCrossings.Add(new cLapCrossings(i, intersectionDateTime, intersection));
+                    lapCrossings.Add(new cLapCrossings(i + 1, intersectionDateTime, intersection)); //we want the first point after the crossing.
                     crossings.Add(intersection);
                     Console.WriteLine($"Crossing detected at: X={intersection.X}, Y={intersection.Y}");
                 }
