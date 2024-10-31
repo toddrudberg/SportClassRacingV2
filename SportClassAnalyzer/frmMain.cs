@@ -7,23 +7,26 @@ using System.Xml.Serialization;
 using OxyPlot.Annotations;
 using System.Runtime.Intrinsics.Arm;
 using OxyPlot.Axes;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 
 namespace SportClassAnalyzer
 {
-    public partial class Form1 : Form
-    {
 
-        public class cFormState
-        {
-            public static string sPylonFile = @"C:\LocalDev\SportClassRacingV2\SportClassOuterCourse - Middle.gpx";
-            public static string sRaceDataFile = @"C:\LocalDev\SportClassRacing\Slater Data\20241018_142045.gpx";
-        }
+    public partial class frmMain : Form
+    {
+        
+        public cFormState myFormState = new cFormState();
+        private frmOptions optionsForm;
+
         public cPylons myPylons = new cPylons();
         public cRaceData myRaceData = new cRaceData();
 
         public List<cLapCrossings> myLapCrossings = new List<cLapCrossings>();
         public List<cLapCrossings> myStartGateCrossings = new List<cLapCrossings>();
+
+        private bool raceBuilt = false;
 
         #region Console Output
         [DllImport("kernel32.dll")]
@@ -73,7 +76,7 @@ namespace SportClassAnalyzer
         #endregion
 
         #region Constructor and Layout
-        public Form1()
+        public frmMain()
         {
             InitializeComponent();
             AllocConsole();
@@ -87,19 +90,33 @@ namespace SportClassAnalyzer
             this.StartPosition = FormStartPosition.Manual;
             this.Location = new Point(screenWidth - this.Width, 0); // Right edge, top of screen
 
-            //buildRace();
-            // Start race-building process asynchronously
-            //_ = buildRaceAsync();
-        }
-        #endregion
+            myFormState = cFormState.Load();
+            myFormState.Save();
 
-        private void buildRace(bool buildFromRaceBox = false)
+            optionsFormBringForward();
+        }
+
+        public void optionsFormBringForward()
+        {
+            if (optionsForm == null || optionsForm.IsDisposed)
+            {
+                optionsForm = new frmOptions(this, myFormState);
+                optionsForm.Show();
+            }
+            else
+            {
+                optionsForm.BringToFront();
+            }
+        }
+#endregion
+
+private void buildRace(bool buildFromRaceBox = false)
         {
             Console.WriteLine("Loading Pylon Data");
             // Load the pylons
             pylons pylons = null;
             XmlSerializer serializer = new XmlSerializer(typeof(pylons));
-            using (FileStream fs = new FileStream(cFormState.sPylonFile, FileMode.Open))
+            using (FileStream fs = new FileStream(myFormState.sPylonFile, FileMode.Open))
             {
                 pylons = (pylons)serializer.Deserialize(fs);
             }
@@ -107,7 +124,7 @@ namespace SportClassAnalyzer
             myPylons.pylonWpts = pylons.wpt.ToList();
             myPylons.elevationInFeet = pylons.elevationInFeet;
             myPylons.assignCartisianCoordinates(myPylons.elevationInFeet);
-            myPylons.assignSegments();
+            myPylons.assignSegments(myFormState);
 
 
             foreach (pylonWpt wpt in pylons.wpt)
@@ -119,7 +136,7 @@ namespace SportClassAnalyzer
             if (buildFromRaceBox)
             {
                 Console.WriteLine("Loading RaceBox Data");
-                List<cRaceBoxRecord> raceBoxRecords = cRaceBoxParser.ParseCsv(cFormState.sRaceDataFile);
+                List<cRaceBoxRecord> raceBoxRecords = cRaceBoxParser.ParseCsv(myFormState.sRaceDataFile);
                 Console.WriteLine("Converting RaceBox Data to GPX");
                 raceData = cRaceBoxParser.ConvertRaceBoxToGpx(raceBoxRecords);
 
@@ -130,7 +147,7 @@ namespace SportClassAnalyzer
                 // Load the race data
 
                 XmlSerializer raceSerializer = new XmlSerializer(typeof(gpx));
-                using (FileStream fs = new FileStream(cFormState.sRaceDataFile, FileMode.Open))
+                using (FileStream fs = new FileStream(myFormState.sRaceDataFile, FileMode.Open))
                 {
                     raceData = (gpx)raceSerializer.Deserialize(fs);
                 }
@@ -146,14 +163,23 @@ namespace SportClassAnalyzer
             myRaceData.assignCartisianCoordinates(myPylons.homePylon());
             myRaceData.calculateSpeedsAndTruncate(100);
             myRaceData.detectLaps(myPylons, out myLapCrossings, out myStartGateCrossings);
-            myRaceData.checkForCourseCuts(myPylons, myLapCrossings, myStartGateCrossings, myRaceData.myLaps);
+            myRaceData.checkForCourseCuts(myFormState, myPylons, myLapCrossings, myStartGateCrossings, myRaceData.myLaps);
+            raceBuilt = true;
+            refreshPlot();
 
-            RacePlotModel racePlotModel = new RacePlotModel();
+        }
 
-            racePlotModel.CreatePlotModel(this, Path.GetFileName(cFormState.sRaceDataFile), myPylons, myRaceData, myLapCrossings, myStartGateCrossings);
+        public void refreshPlot()
+        {
+            if (raceBuilt)
+            {
+                RacePlotModel racePlotModel = new RacePlotModel();
 
-            this.listBox1.Hide();
-            this.listBox2.Hide();
+                racePlotModel.CreatePlotModel(this, myFormState, myPylons, myRaceData, myLapCrossings, myStartGateCrossings);
+
+                this.listBox1.Hide();
+                this.listBox2.Hide();
+            }
         }
 
         private void SetConsoleSize(int width, int height)
@@ -194,9 +220,9 @@ namespace SportClassAnalyzer
             if (openFileDialog1.FileName != "")
             {
                 clearAllData();
-                cFormState.sRaceDataFile = openFileDialog1.FileName;
+                myFormState.sRaceDataFile = openFileDialog1.FileName;
                 buildRace();
-                //await DisplayMap();
+
             }
         }
 
@@ -209,10 +235,11 @@ namespace SportClassAnalyzer
             if (openFileDialog1.FileName != "")
             {
                 clearAllData();
-                cFormState.sRaceDataFile = openFileDialog1.FileName;
+                myFormState.sRaceDataFile = openFileDialog1.FileName;
                 buildRace(true);
-                //await DisplayMap();
+
             }
         }
+
     }
 }

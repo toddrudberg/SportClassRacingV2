@@ -34,9 +34,10 @@ namespace SportClassAnalyzer
         };
 
         private PlotView currentPlotView;
-        public void CreatePlotModel(System.Windows.Forms.Form form, string title, cPylons pylons, cRaceData raceData, List<cLapCrossings> lapCrossings, List<cLapCrossings> startGateCrossings)
+        public void CreatePlotModel(System.Windows.Forms.Form form, cFormState formState, cPylons pylons, cRaceData raceData, List<cLapCrossings> lapCrossings, List<cLapCrossings> startGateCrossings)
         {
             List<racePoint> racePoints = raceData.racePoints;
+            string title = Path.GetFileNameWithoutExtension(formState.sRaceDataFile);
             // Remove the existing PlotView, if there is one
             if (currentPlotView != null)
             {
@@ -53,7 +54,7 @@ namespace SportClassAnalyzer
             cPoint upperLeft;
             cPoint lowerRight;
             plotBackGroundImage(plotModel, pylons, out upperLeft, out lowerRight);
-            plotPylons(pylons, plotModel);
+            plotPylons(pylons, plotModel, formState);
             plotRaceData(racePoints, lapCrossings, startGateCrossings, plotModel);
             plotLapSummary(raceData.myLaps, plotModel, upperLeft, lowerRight);
 
@@ -188,7 +189,7 @@ namespace SportClassAnalyzer
             plotModel.Annotations.Add(imageAnnotation);
         }
 
-        private void plotPylons(cPylons pylons, PlotModel plotModel)
+        private void plotPylons(cPylons pylons, PlotModel plotModel, cFormState formState)
         {
             // Create a scatter series
             var scatterSeries = new ScatterSeries
@@ -198,8 +199,25 @@ namespace SportClassAnalyzer
                 MarkerSize = 10 // Optional: adjust marker size
             };
             var rubberbandSeries = new LineSeries { Color = OxyColors.Black };
-            var outerCoursePylons = pylons.outerCoursePylons();
-            foreach( var pylon in outerCoursePylons)
+
+            var activePylons = pylons.outerCoursePylons();
+            List<pylonWpt> startPylons = new List<pylonWpt>();
+            startPylons = pylons.startPylons(formState.courseType, true);
+
+            switch (formState.courseType)
+            {
+                case cFormState.CourseType.Inner:
+                    activePylons = pylons.innerCoursePylons();
+                    break;
+                case cFormState.CourseType.Outer:
+                    activePylons = pylons.outerCoursePylons();
+                    break;
+                case cFormState.CourseType.Middle:
+                    activePylons = pylons.middleCoursePylons();
+                    break;
+            }
+
+            foreach( var pylon in activePylons)
             {
                 // Add the data points to the scatter series
                 scatterSeries.Points.Add(new ScatterPoint((double)pylon.X, (double)pylon.Y, 5, 5));
@@ -221,9 +239,41 @@ namespace SportClassAnalyzer
             var homePylon = pylons.homePylonPoint();
             rubberbandSeries.Points.Add(new DataPoint(homePylon.X, homePylon.Y));
 
+            var rubberbandSeriesStart = new LineSeries { Color = OxyColors.Black };
+            if (formState.showStartLap && !formState.courseType.Equals(cFormState.CourseType.Outer))
+            {
+                foreach (var pylon in startPylons)
+                {
+                    // Add the data points to the scatter series
+                    scatterSeries.Points.Add(new ScatterPoint((double)pylon.X, (double)pylon.Y, 5, 5));
+                    rubberbandSeriesStart.Points.Add(new DataPoint(pylon.X, pylon.Y));
+
+                    if (pylon.name != "")
+                    {
+                        var textAnnotation = new TextAnnotation
+                        {
+                            Text = pylon.name, // Assuming each pylon has a Name property
+                            TextPosition = new DataPoint(pylon.X, pylon.Y),
+                            TextColor = OxyColors.Black,
+                            FontWeight = FontWeights.Bold,
+                            FontSize = 12, // Adjust font size as needed
+                            Stroke = OxyColors.Transparent // Make sure no border shows
+                        };
+                        // Add the annotation to the plot model
+                        plotModel.Annotations.Add(textAnnotation);
+                    }
+                }
+                if (formState.courseType == cFormState.CourseType.Inner)
+                {
+                    rubberbandSeriesStart.Points.Add(new DataPoint(homePylon.X, homePylon.Y));
+                }
+            }
+            
+
             // Add the scatter series to the plot model
             plotModel.Series.Add(scatterSeries);
             plotModel.Series.Add(rubberbandSeries);
+            plotModel.Series.Add(rubberbandSeriesStart);
 
             var startPylon = pylons.startFinishPylon();
 

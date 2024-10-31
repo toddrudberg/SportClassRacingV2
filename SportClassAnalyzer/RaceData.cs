@@ -94,10 +94,22 @@ namespace SportClassAnalyzer
             }
         }
 
-        public void checkForCourseCuts(cPylons pylons, List<cLapCrossings> lapCrossings, List<cLapCrossings> startGateCrossings, List<cLap> laps)
+        public void checkForCourseCuts(cFormState formState, cPylons pylons, List<cLapCrossings> lapCrossings, List<cLapCrossings> startGateCrossings, List<cLap> laps)
         {
             var coursePylons = pylons.outerCoursePylons();
-
+            var startPylons = pylons.startPylons(formState.courseType, false);
+            switch(formState.courseType)
+            {
+                case cFormState.CourseType.Inner:
+                    coursePylons = pylons.innerCoursePylons();
+                    break;
+                case cFormState.CourseType.Middle:
+                    coursePylons = pylons.middleCoursePylons();
+                    break;
+                case cFormState.CourseType.Outer:
+                    coursePylons = pylons.outerCoursePylons();
+                    break;
+            }
             
             List<cLapCrossings> cuts;
 
@@ -108,12 +120,17 @@ namespace SportClassAnalyzer
                     int startOfLap = 0;
                     int endOfLap = 0;
                     int nPylonCuts = 0;
+                    bool evaluateStartLap = false;
 
                     if (i == 0)
                     {
                         if (startGateCrossings.Count == 0)
                         {
                             continue;
+                        }
+                        else
+                        {
+                            evaluateStartLap = true;
                         }
                     }
                     else
@@ -124,12 +141,17 @@ namespace SportClassAnalyzer
                     endOfLap = lapCrossings[i].dataPoint;
 
                     List<racePoint> lapData = racePoints.GetRange(startOfLap, endOfLap - startOfLap);
-                    int crossingSegment = 0;
+
                     bool insideCourse = false;
-                    for (int j = 0; j < coursePylons.Count - 1; j++)
+                    var activePylons = coursePylons;
+                    if (evaluateStartLap)
                     {
-                        cPoint p1 = new cPoint(coursePylons[j].X, coursePylons[j].Y);
-                        cPoint p2 = new cPoint(coursePylons[j + 1].X, coursePylons[j + 1].Y);
+                        activePylons = startPylons;
+                    }
+                    for (int j = 0; j < activePylons.Count - 1; j++)
+                    {
+                        cPoint p1 = new cPoint(activePylons[j].X, activePylons[j].Y);
+                        cPoint p2 = new cPoint(activePylons[j + 1].X, activePylons[j + 1].Y);
                         int cut = LineCrossingDetector.DetectCrossings(lapData, p1, p2, out cuts);
                         if (insideCourse)
                         {

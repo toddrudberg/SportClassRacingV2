@@ -92,6 +92,40 @@ namespace SportClassAnalyzer
             return coursePylons;
 
         }
+
+        public List<pylonWpt> startPylons(cFormState.CourseType courseType, bool forDisplay = false)
+        {
+            List<pylonWpt> coursePylons = outerCoursePylons().Select(p => p.Clone()).ToList();
+
+            coursePylons = coursePylons.Where(p => !p.name.StartsWith("oP1")).ToList();
+
+            if( forDisplay)
+            {
+                //remove the Home pylon
+                coursePylons = coursePylons.Where(p => p.name != "Home").ToList();
+
+                // rename replace the o with an s in all the names
+                foreach (var pylon in coursePylons)
+                {
+                    pylon.name = pylon.name.Replace("o", "s");
+                }
+
+                if(courseType == cFormState.CourseType.Middle)
+                {
+                    // replace the name for s2, s3, s4, Home with ""
+                    foreach( var pylon in coursePylons)
+                    {
+                        if (pylon.name == "sP2" || pylon.name == "sP3" || pylon.name == "sP7" || pylon.name == "sP4" || pylon.name == "Home")
+                        {
+                            pylon.name = "";
+                        }
+                    }
+
+                }
+            }
+            return coursePylons;
+        }
+
         public cPoint startFinishPylonPoint()
         {
             pylonWpt startFinishPylon = this.startFinishPylon();
@@ -133,12 +167,22 @@ namespace SportClassAnalyzer
             }
         }
 
-        public int assignSegments()
+        public int assignSegments(cFormState formState)
         {
             int output = 0;
-            //let's use the where statement to get all pylons not named "StartFinish"
             var pylons = this.outerCoursePylons();
-            //remove Gate1 and Gate2 from the list
+            switch( formState.courseType )
+            {
+                case cFormState.CourseType.Inner:
+                    pylons = innerCoursePylons();
+                    break;
+                case cFormState.CourseType.Middle:
+                    pylons = middleCoursePylons();
+                    break;
+                case cFormState.CourseType.Outer:
+                    pylons = outerCoursePylons();
+                    break;
+            }
             // calculate the distance between each pylon and the next pylon using the X, Y data
             for (int i = 0; i < pylons.Count - 1; i++)
             {
@@ -266,6 +310,20 @@ namespace SportClassAnalyzer
             {
                 this.nameField = value;
             }
+        }
+
+            // Create a copy method
+        public pylonWpt Clone()
+        {
+            return new pylonWpt
+            {
+                nameField = this.nameField,
+                latField = this.latField,
+                lonField = this.lonField,
+                X = this.X,
+                Y = this.Y
+
+            };
         }
 
         /// <remarks/>
