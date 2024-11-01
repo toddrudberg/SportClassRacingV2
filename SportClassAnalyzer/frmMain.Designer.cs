@@ -1,6 +1,6 @@
 ﻿namespace SportClassAnalyzer
 {
-    partial class Form1
+    partial class frmMain
     {
         /// <summary>
         ///  Required designer variable.
@@ -34,37 +34,35 @@
             fileToolStripMenuItem = new ToolStripMenuItem();
             openToolStripMenuItem = new ToolStripMenuItem();
             openRaceBoxFileToolStripMenuItem = new ToolStripMenuItem();
+            raceOptionsToolStripMenuItem = new ToolStripMenuItem();
+            selectCourseToolStripMenuItem = new ToolStripMenuItem();
+            toolStripSeparator1 = new ToolStripSeparator();
             menuStrip1.SuspendLayout();
             SuspendLayout();
             // 
             // listBox1
             // 
             listBox1.FormattingEnabled = true;
-            listBox1.ItemHeight = 25;
-            listBox1.Location = new Point(34, 50);
-            listBox1.Margin = new Padding(4, 4, 4, 4);
+            listBox1.Location = new Point(27, 40);
             listBox1.Name = "listBox1";
-            listBox1.Size = new Size(544, 429);
+            listBox1.Size = new Size(436, 344);
             listBox1.TabIndex = 0;
             // 
             // listBox2
             // 
             listBox2.FormattingEnabled = true;
-            listBox2.ItemHeight = 25;
-            listBox2.Location = new Point(604, 50);
-            listBox2.Margin = new Padding(4, 4, 4, 4);
+            listBox2.Location = new Point(483, 40);
             listBox2.Name = "listBox2";
-            listBox2.Size = new Size(1066, 429);
+            listBox2.Size = new Size(854, 344);
             listBox2.TabIndex = 1;
             // 
             // menuStrip1
             // 
             menuStrip1.ImageScalingSize = new Size(20, 20);
-            menuStrip1.Items.AddRange(new ToolStripItem[] { fileToolStripMenuItem });
+            menuStrip1.Items.AddRange(new ToolStripItem[] { fileToolStripMenuItem, raceOptionsToolStripMenuItem });
             menuStrip1.Location = new Point(0, 0);
             menuStrip1.Name = "menuStrip1";
-            menuStrip1.Padding = new Padding(8, 2, 0, 2);
-            menuStrip1.Size = new Size(1739, 33);
+            menuStrip1.Size = new Size(1391, 28);
             menuStrip1.TabIndex = 3;
             menuStrip1.Text = "menuStrip1";
             // 
@@ -72,35 +70,53 @@
             // 
             fileToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { openToolStripMenuItem, openRaceBoxFileToolStripMenuItem });
             fileToolStripMenuItem.Name = "fileToolStripMenuItem";
-            fileToolStripMenuItem.Size = new Size(54, 29);
+            fileToolStripMenuItem.Size = new Size(46, 24);
             fileToolStripMenuItem.Text = "File";
             // 
             // openToolStripMenuItem
             // 
             openToolStripMenuItem.Name = "openToolStripMenuItem";
-            openToolStripMenuItem.Size = new Size(270, 34);
+            openToolStripMenuItem.Size = new Size(216, 26);
             openToolStripMenuItem.Text = "Open";
             openToolStripMenuItem.Click += openToolStripMenuItem_Click;
             // 
             // openRaceBoxFileToolStripMenuItem
             // 
             openRaceBoxFileToolStripMenuItem.Name = "openRaceBoxFileToolStripMenuItem";
-            openRaceBoxFileToolStripMenuItem.Size = new Size(270, 34);
+            openRaceBoxFileToolStripMenuItem.Size = new Size(216, 26);
             openRaceBoxFileToolStripMenuItem.Text = "Open RaceBox File";
             openRaceBoxFileToolStripMenuItem.Click += openRaceBoxFileToolStripMenuItem_Click;
             // 
-            // Form1
+            // raceOptionsToolStripMenuItem
             // 
-            AutoScaleDimensions = new SizeF(10F, 25F);
+            raceOptionsToolStripMenuItem.CheckOnClick = true;
+            raceOptionsToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { selectCourseToolStripMenuItem, toolStripSeparator1 });
+            raceOptionsToolStripMenuItem.Name = "raceOptionsToolStripMenuItem";
+            raceOptionsToolStripMenuItem.Size = new Size(111, 24);
+            raceOptionsToolStripMenuItem.Text = "Race Options";
+            // 
+            // selectCourseToolStripMenuItem
+            // 
+            selectCourseToolStripMenuItem.Name = "selectCourseToolStripMenuItem";
+            selectCourseToolStripMenuItem.Size = new Size(182, 26);
+            selectCourseToolStripMenuItem.Text = "Options Form";
+            // 
+            // toolStripSeparator1
+            // 
+            toolStripSeparator1.Name = "toolStripSeparator1";
+            toolStripSeparator1.Size = new Size(179, 6);
+            // 
+            // frmMain
+            // 
+            AutoScaleDimensions = new SizeF(8F, 20F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(1739, 562);
+            ClientSize = new Size(1391, 450);
             Controls.Add(listBox2);
             Controls.Add(listBox1);
             Controls.Add(menuStrip1);
             MainMenuStrip = menuStrip1;
-            Margin = new Padding(4, 4, 4, 4);
-            Name = "Form1";
-            Text = "Form1";
+            Name = "frmMain";
+            Text = "Race Analyzer";
             menuStrip1.ResumeLayout(false);
             menuStrip1.PerformLayout();
             ResumeLayout(false);
@@ -115,5 +131,8 @@
         private ToolStripMenuItem fileToolStripMenuItem;
         private ToolStripMenuItem openToolStripMenuItem;
         private ToolStripMenuItem openRaceBoxFileToolStripMenuItem;
+        private ToolStripMenuItem raceOptionsToolStripMenuItem;
+        private ToolStripMenuItem selectCourseToolStripMenuItem;
+        private ToolStripSeparator toolStripSeparator1;
     }
 }
