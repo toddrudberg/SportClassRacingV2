@@ -155,9 +155,11 @@ private void buildRace(bool buildFromRaceBox = false)
             Console.WriteLine($"Elapsed time: {stopwatch.ElapsedMilliseconds} ms".Pastel(Color.Green));
             myRaceData.racePoints = raceData.trk.trkseg.ToList();
             raceBuilt = true;
+            plottedOnce = false;
             refreshPlot();
         }
 
+        bool plottedOnce = false;
         public void refreshPlot()
         {
             if (raceBuilt)
@@ -167,7 +169,7 @@ private void buildRace(bool buildFromRaceBox = false)
                 myPylons.assignSegments(myFormState);   
                 
                 myRaceData.assignCartisianCoordinates(myPylons.homePylon());
-                myRaceData.calculateSpeedsAndTruncate(100);
+                myRaceData.calculateSpeedsAndTruncate(100, plottedOnce);
                 myRaceData.detectLaps(myPylons, out myLapCrossings, out myStartGateCrossings);
                 myRaceData.checkForCourseCuts(myFormState, myPylons, myLapCrossings, myStartGateCrossings, myRaceData.myLaps);
                 
@@ -175,7 +177,7 @@ private void buildRace(bool buildFromRaceBox = false)
                 racePlotModel.CreatePlotModel(this, myFormState, myPylons, myRaceData, myLapCrossings, myStartGateCrossings);
                 stopwatch.Stop();
                 Console.WriteLine($"Elapsed time: {stopwatch.ElapsedMilliseconds} ms".Pastel(Color.Chartreuse));
-
+                plottedOnce = true;
             }
         }
 

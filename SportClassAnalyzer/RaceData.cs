@@ -132,6 +132,7 @@ namespace SportClassAnalyzer
                         }
                         else
                         {
+                            startOfLap = startGateCrossings[0].dataPoint;
                             evaluateStartLap = true;
                         }
                     }
@@ -198,11 +199,11 @@ namespace SportClassAnalyzer
             if( numStartCrossings > 0 && startGateCrossings[0].dataPoint > 5)
             {
                 //remove all data points before the first start gate crossing
-                racePoints = racePoints.GetRange(startGateCrossings[0].dataPoint - 5, racePoints.Count - startGateCrossings[0].dataPoint);            
+                //racePoints = racePoints.GetRange(startGateCrossings[0].dataPoint - 5, racePoints.Count - startGateCrossings[0].dataPoint);            
             }
             else
             {
-                racePoints = racePoints.GetRange(0, racePoints.Count);
+                //racePoints = racePoints.GetRange(0, racePoints.Count);
                 Console.WriteLine("No start gate crossings detected - assuming start at beginning of data");
             }
 
@@ -294,7 +295,7 @@ namespace SportClassAnalyzer
             }
         }
 
-        public void calculateSpeedsAndTruncate(double limitSpeed)
+        public void calculateSpeedsAndTruncate(double limitSpeed, bool plottedOnce)
         {
             int lastIndex = 0;
             double lastSpeed = 0;
@@ -323,7 +324,10 @@ namespace SportClassAnalyzer
             }
 
             //truncate myRaceData to only include points where speed is greater than 100 mph
-            racePoints = racePoints.Where(p => p.speedMPH > limitSpeed).ToList();
+            if(!plottedOnce)
+            {
+                racePoints = racePoints.Where(p => p.speedMPH > limitSpeed).ToList();
+            }
         }
 
     }
