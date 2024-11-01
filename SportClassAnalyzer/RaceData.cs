@@ -132,7 +132,8 @@ namespace SportClassAnalyzer
                         }
                         else
                         {
-                            startOfLap = startGateCrossings[0].dataPoint;
+                            //startOfLap = startGateCrossings[0].dataPoint;
+                            startOfLap = 0;
                             evaluateStartLap = true;
                         }
                     }
@@ -199,11 +200,11 @@ namespace SportClassAnalyzer
             if( numStartCrossings > 0 && startGateCrossings[0].dataPoint > 5)
             {
                 //remove all data points before the first start gate crossing
-                //racePoints = racePoints.GetRange(startGateCrossings[0].dataPoint - 5, racePoints.Count - startGateCrossings[0].dataPoint);            
+                racePoints = racePoints.GetRange(startGateCrossings[0].dataPoint - 5, racePoints.Count - startGateCrossings[0].dataPoint);            
             }
             else
             {
-                //racePoints = racePoints.GetRange(0, racePoints.Count);
+                racePoints = racePoints.GetRange(0, racePoints.Count);
                 Console.WriteLine("No start gate crossings detected - assuming start at beginning of data");
             }
 
