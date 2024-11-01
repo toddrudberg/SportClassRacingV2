@@ -28,8 +28,6 @@
         /// </summary>
         private void InitializeComponent()
         {
-            listBox1 = new ListBox();
-            listBox2 = new ListBox();
             menuStrip1 = new MenuStrip();
             fileToolStripMenuItem = new ToolStripMenuItem();
             openToolStripMenuItem = new ToolStripMenuItem();
@@ -39,22 +37,6 @@
             toolStripSeparator1 = new ToolStripSeparator();
             menuStrip1.SuspendLayout();
             SuspendLayout();
-            // 
-            // listBox1
-            // 
-            listBox1.FormattingEnabled = true;
-            listBox1.Location = new Point(27, 40);
-            listBox1.Name = "listBox1";
-            listBox1.Size = new Size(436, 344);
-            listBox1.TabIndex = 0;
-            // 
-            // listBox2
-            // 
-            listBox2.FormattingEnabled = true;
-            listBox2.Location = new Point(483, 40);
-            listBox2.Name = "listBox2";
-            listBox2.Size = new Size(854, 344);
-            listBox2.TabIndex = 1;
             // 
             // menuStrip1
             // 
@@ -111,8 +93,6 @@
             AutoScaleDimensions = new SizeF(8F, 20F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(1391, 450);
-            Controls.Add(listBox2);
-            Controls.Add(listBox1);
             Controls.Add(menuStrip1);
             MainMenuStrip = menuStrip1;
             Name = "frmMain";
@@ -124,9 +104,6 @@
         }
 
         #endregion
-
-        private ListBox listBox1;
-        private ListBox listBox2;
         private MenuStrip menuStrip1;
         private ToolStripMenuItem fileToolStripMenuItem;
         private ToolStripMenuItem openToolStripMenuItem;

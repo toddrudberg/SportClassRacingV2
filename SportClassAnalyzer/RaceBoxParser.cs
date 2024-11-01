@@ -29,23 +29,6 @@ namespace SportClassAnalyzer
 
     class cRaceBoxParser
     {
-    //     static void Main()
-    //     {
-    //         string csvData = @"Record,Time,Latitude,Longitude,Altitude,Speed,GForceX,GForceY,GForceZ,Lap,GyroX,GyroY,GyroZ
-    // 1,2024-10-19T15:24:58.400,32.2848992,-106.9305228,4441.0,3.17,0.023,-0.019,1.007,0,0.41,-0.44,-0.18
-    // 2,2024-10-19T15:24:58.440,32.2848996,-106.9305226,4441.0,3.12,0.039,-0.017,1.009,0,0.44,-0.32,-0.45
-    // 3,2024-10-19T15:24:58.480,32.2849001,-106.9305224,4441.0,3.27,0.052,-0.015,1.007,0,0.48,-0.22,-0.69
-    // 4,2024-10-19T15:24:58.520,32.2849005,-106.9305222,4441.0,3.17,0.064,-0.015,1.007,0,0.45,-0.04,-0.89";
-
-    //         // Parse CSV data
-    //         List<Record> records = ParseCsv(csvData);
-
-    //         // Output the parsed data
-    //         foreach (var record in records)
-    //         {
-    //             Console.WriteLine($"Record {record.RecordNumber}: Time={record.Time}, Latitude={record.Latitude}, Longitude={record.Longitude}, Speed={record.Speed}");
-    //         }
-    //     }
 
         public static List<cRaceBoxRecord> ParseCsv(string csvData)
         {
@@ -95,7 +78,7 @@ namespace SportClassAnalyzer
                 time = record.Time,
                 lat = record.Latitude,
                 lon = record.Longitude,
-                ele = (decimal)record.Altitude
+                ele = (decimal)(record.Altitude / 3.28084)
             }).ToList();
 
             raceData.trk.trkseg = trackPoints.ToArray();

@@ -9,6 +9,8 @@ using System.Runtime.Intrinsics.Arm;
 using OxyPlot.Axes;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Diagnostics;
+using Pastel;
 
 
 namespace SportClassAnalyzer
@@ -112,6 +114,7 @@ namespace SportClassAnalyzer
 
 private void buildRace(bool buildFromRaceBox = false)
         {
+            Stopwatch stopwatch = Stopwatch.StartNew();
             Console.WriteLine("Loading Pylon Data");
             // Load the pylons
             pylons pylons = null;
@@ -122,15 +125,7 @@ private void buildRace(bool buildFromRaceBox = false)
             }
             //write the pylons to a listbox
             myPylons.pylonWpts = pylons.wpt.ToList();
-            myPylons.elevationInFeet = pylons.elevationInFeet;
-            myPylons.assignCartisianCoordinates(myPylons.elevationInFeet);
-            myPylons.assignSegments(myFormState);
-
-
-            foreach (pylonWpt wpt in pylons.wpt)
-            {
-                listBox1.Items.Add(wpt);
-            }
+            myPylons.elevationInFeet = 0;//pylons.elevationInFeet; using zero makes the course length match the survey
 
             gpx raceData = null;
             if (buildFromRaceBox)
@@ -144,41 +139,43 @@ private void buildRace(bool buildFromRaceBox = false)
             else
             {
                 Console.WriteLine("Loading Race Data");
+                
                 // Load the race data
-
                 XmlSerializer raceSerializer = new XmlSerializer(typeof(gpx));
+                
+                
                 using (FileStream fs = new FileStream(myFormState.sRaceDataFile, FileMode.Open))
                 {
                     raceData = (gpx)raceSerializer.Deserialize(fs);
                 }
-            }
-            // Process the race data as needed
-            // For example, add race data to a listbox
-            foreach (var gpxTrkTrkpt in raceData.trk.trkseg)
-            {
-                listBox2.Items.Add(gpxTrkTrkpt);
+
             }
 
+            stopwatch.Stop();
+            Console.WriteLine($"Elapsed time: {stopwatch.ElapsedMilliseconds} ms".Pastel(Color.Green));
             myRaceData.racePoints = raceData.trk.trkseg.ToList();
-            myRaceData.assignCartisianCoordinates(myPylons.homePylon());
-            myRaceData.calculateSpeedsAndTruncate(100);
-            myRaceData.detectLaps(myPylons, out myLapCrossings, out myStartGateCrossings);
-            myRaceData.checkForCourseCuts(myFormState, myPylons, myLapCrossings, myStartGateCrossings, myRaceData.myLaps);
             raceBuilt = true;
             refreshPlot();
-
         }
 
         public void refreshPlot()
         {
             if (raceBuilt)
             {
+                Stopwatch stopwatch = Stopwatch.StartNew();
+                myPylons.assignCartisianCoordinates(myPylons.elevationInFeet);
+                myPylons.assignSegments(myFormState);   
+                
+                myRaceData.assignCartisianCoordinates(myPylons.homePylon());
+                myRaceData.calculateSpeedsAndTruncate(100);
+                myRaceData.detectLaps(myPylons, out myLapCrossings, out myStartGateCrossings);
+                myRaceData.checkForCourseCuts(myFormState, myPylons, myLapCrossings, myStartGateCrossings, myRaceData.myLaps);
+                
                 RacePlotModel racePlotModel = new RacePlotModel();
-
                 racePlotModel.CreatePlotModel(this, myFormState, myPylons, myRaceData, myLapCrossings, myStartGateCrossings);
+                stopwatch.Stop();
+                Console.WriteLine($"Elapsed time: {stopwatch.ElapsedMilliseconds} ms".Pastel(Color.Chartreuse));
 
-                this.listBox1.Hide();
-                this.listBox2.Hide();
             }
         }
 
@@ -237,7 +234,6 @@ private void buildRace(bool buildFromRaceBox = false)
                 clearAllData();
                 myFormState.sRaceDataFile = openFileDialog1.FileName;
                 buildRace(true);
-
             }
         }
 
