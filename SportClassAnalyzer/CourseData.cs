@@ -12,6 +12,7 @@ namespace SportClassAnalyzer
     {
         public List<pylonWpt> pylonWpts = new List<pylonWpt>();
         public List<double> segments = new List<double>();
+        public double ele;
         public double elevationInFeet = 4450;
         public cPylons() { }
 
@@ -171,6 +172,7 @@ namespace SportClassAnalyzer
         {
             int output = 0;
             var pylons = this.outerCoursePylons();
+            segments.Clear();
             switch( formState.courseType )
             {
                 case cFormState.CourseType.Inner:
@@ -204,6 +206,7 @@ namespace SportClassAnalyzer
 
             return output;
         }
+
     }
 
 
@@ -216,14 +219,14 @@ namespace SportClassAnalyzer
     [System.Xml.Serialization.XmlRootAttribute(Namespace = "", IsNullable = false)]
     public partial class pylons
     {
-        private ushort eleField;
+        private double eleField;
         private pylonWpt[] wptField;
 
         private decimal versionField;
 
         private string creatorField;
 
-        public ushort ele
+        public double ele
         {
             get
             {

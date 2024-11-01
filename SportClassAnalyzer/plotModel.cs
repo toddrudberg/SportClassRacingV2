@@ -56,7 +56,7 @@ namespace SportClassAnalyzer
             plotBackGroundImage(plotModel, pylons, out upperLeft, out lowerRight);
             plotPylons(pylons, plotModel, formState);
             plotRaceData(racePoints, lapCrossings, startGateCrossings, plotModel);
-            plotLapSummary(raceData.myLaps, plotModel, upperLeft, lowerRight);
+            plotLapSummary(raceData.myLaps, plotModel, upperLeft, lowerRight,pylons.segments.Sum());
 
             int menuBarHeight = 30; // Adjust this height based on your menu bar size
 
@@ -294,7 +294,7 @@ namespace SportClassAnalyzer
             //    plotModel.Series.Add(lineSeries2);
             //}
         }
-        private void plotLapSummary(List<cLap> laps, PlotModel plotModel, cPoint upperLeft, cPoint lowerRight)
+        private void plotLapSummary(List<cLap> laps, PlotModel plotModel, cPoint upperLeft, cPoint lowerRight, double ptpDistance)
         {
             double percentOfWidth = 0.25;
             double lineSpacingPercent = 0.0225; // Adjust this value based on your layout needs
@@ -319,12 +319,12 @@ namespace SportClassAnalyzer
 
             var headerText = new TextAnnotation
             {
-                Text = "Lap Summary",
+                Text = $"Lap Summary - PTP Distance: {(ptpDistance / 5280):F3} Miles", // Example header text
                 TextVerticalAlignment = VerticalAlignment.Top,
                 TextHorizontalAlignment = OxyPlot.HorizontalAlignment.Left,
                 TextPosition = new DataPoint(lowerRight.X - (width * (percentOfWidth - 0.01)), startY),
                 TextColor = OxyColors.Black,
-                FontSize = 16,
+                FontSize = 12,
                 Stroke = OxyColors.Transparent
             };
             plotModel.Annotations.Add(headerText);

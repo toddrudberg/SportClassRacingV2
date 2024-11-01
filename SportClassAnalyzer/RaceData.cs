@@ -4,6 +4,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Pastel;
+using System.Drawing;
 
 namespace SportClassAnalyzer
 {
@@ -193,14 +195,15 @@ namespace SportClassAnalyzer
             List<cPoint> startGates = pylons.gatePylonPoints();
             List<cLapCrossings> test = new List<cLapCrossings>();
             int numStartCrossings = LineCrossingDetector.DetectCrossings(racePoints, startGates[0], startGates[1], out startGateCrossings);
-            if( numStartCrossings > 0)
+            if( numStartCrossings > 0 && startGateCrossings[0].dataPoint > 5)
             {
                 //remove all data points before the first start gate crossing
-                racePoints = racePoints.GetRange(startGateCrossings[0].dataPoint, racePoints.Count - startGateCrossings[0].dataPoint);            
+                racePoints = racePoints.GetRange(startGateCrossings[0].dataPoint - 5, racePoints.Count - startGateCrossings[0].dataPoint);            
             }
             else
             {
-                Console.WriteLine("No start gate crossings detected");
+                racePoints = racePoints.GetRange(0, racePoints.Count);
+                Console.WriteLine("No start gate crossings detected - assuming start at beginning of data");
             }
 
             int crossings = LineCrossingDetector.DetectCrossings(racePoints, homePylon, startFinishPylon, out lapCrossings);
@@ -228,7 +231,8 @@ namespace SportClassAnalyzer
                     {
                         if( numStartCrossings == 0)
                         {
-                            continue;
+                            Console.WriteLine("alert! assuming start crossing is beginning of data.".Pastel(Color.Red));
+                            //continue;
                         }
                     }
                     else
