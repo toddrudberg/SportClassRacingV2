@@ -18,7 +18,7 @@ namespace SportClassAnalyzer
 
     public partial class frmMain : Form
     {
-        
+
         public cFormState myFormState = new cFormState();
         private frmOptions optionsForm;
 
@@ -110,9 +110,9 @@ namespace SportClassAnalyzer
                 optionsForm.BringToFront();
             }
         }
-#endregion
+        #endregion
 
-private void buildRace(bool buildFromRaceBox = false)
+        private void buildRace(bool buildFromRaceBox = false)
         {
             Stopwatch stopwatch = Stopwatch.StartNew();
             Console.WriteLine("Loading Pylon Data");
@@ -139,11 +139,11 @@ private void buildRace(bool buildFromRaceBox = false)
             else
             {
                 Console.WriteLine("Loading Race Data");
-                
+
                 // Load the race data
                 XmlSerializer raceSerializer = new XmlSerializer(typeof(gpx));
-                
-                
+
+
                 using (FileStream fs = new FileStream(myFormState.sRaceDataFile, FileMode.Open))
                 {
                     raceData = (gpx)raceSerializer.Deserialize(fs);
@@ -164,13 +164,13 @@ private void buildRace(bool buildFromRaceBox = false)
             {
                 Stopwatch stopwatch = Stopwatch.StartNew();
                 myPylons.assignCartisianCoordinates(myPylons.elevationInFeet);
-                myPylons.assignSegments(myFormState);   
-                
+                myPylons.assignSegments(myFormState);
+
                 myRaceData.assignCartisianCoordinates(myPylons.homePylon());
                 myRaceData.calculateSpeedsAndTruncate(100);
                 myRaceData.detectLaps(myPylons, out myLapCrossings, out myStartGateCrossings);
                 myRaceData.checkForCourseCuts(myFormState, myPylons, myLapCrossings, myStartGateCrossings, myRaceData.myLaps);
-                
+
                 RacePlotModel racePlotModel = new RacePlotModel();
                 racePlotModel.CreatePlotModel(this, myFormState, myPylons, myRaceData, myLapCrossings, myStartGateCrossings);
                 stopwatch.Stop();
@@ -237,5 +237,18 @@ private void buildRace(bool buildFromRaceBox = false)
             }
         }
 
+        private void openRaceCourseFile(object sender, EventArgs e)
+        {
+            OpenFileDialog openFileDialog1 = new OpenFileDialog();
+            openFileDialog1.Filter = "GPX files|*.gpx";
+            openFileDialog1.Title = "Select a GPX file";
+            openFileDialog1.ShowDialog();
+            if (openFileDialog1.FileName != "")
+            {
+                clearAllData();
+                myFormState.sPylonFile = openFileDialog1.FileName;
+                //buildRace();
+            }
+        }
     }
 }

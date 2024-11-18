@@ -10,7 +10,10 @@ namespace SportClassAnalyzer
 {
     public class cFormState
     {
-        public string sPylonFile { get; set; } = @"C:\LocalDev\SportClassRacingV2\SportClassOuterCourse - Middle.gpx";
+        //"C:\LocalDev\SportClassRacingV2\RaceColville.gpx"
+        //public string sPylonFile { get; set; } = @"C:\LocalDev\SportClassRacingV2\SportClassOuterCourse - Middle.gpx";
+        public string sPylonFile { get; set; } = @"C:\LocalDev\SportClassRacingV2\RaceColville.gpx";
+        
         public string sRaceDataFile { get; set; } = @"C:\LocalDev\SportClassRacing\Slater Data\20241018_142045.gpx";
         public bool showStartLap { get; set; } = true;
         public CourseType courseType { get; set; } = CourseType.Outer;

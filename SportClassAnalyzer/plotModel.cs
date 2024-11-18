@@ -86,7 +86,8 @@ namespace SportClassAnalyzer
             upperLeft = new cPoint(0, 0);
             lowerRight = new cPoint(0, 0);
             // Load your image
-            var imagePath = @"C:\LocalDev\SportClassRacingV2\LasCrucesMap.PNG"; // Path to the Google Earth image
+            //var imagePath = @"C:\LocalDev\SportClassRacingV2\LasCrucesMap.PNG"; // Path to the Google Earth image
+            var imagePath = @"C:\LocalDev\SportClassRacingV2\ColvilleRaceCourse.png"; // Path to the Google Earth image
             byte[] imageBytes;
 
             using (var bitmap = (Bitmap)Image.FromFile(imagePath))
@@ -102,10 +103,16 @@ namespace SportClassAnalyzer
             var oxyImage = new OxyImage(imageBytes);
 
             // Define coordinates for scaling (latitude and longitude)
-            double upperLeftLat = 32.318633;  // Upper-left latitude
-            double upperLeftLon = -106.961483; // Upper-left longitude
-            double lowerRightLat = 32.278689;  // Lower-right latitude
-            double lowerRightLon = -106.874525; // Lower-right longitude
+            //double upperLeftLat = 32.318633;  // Upper-left latitude
+            //double upperLeftLon = -106.961483; // Upper-left longitude
+            //double lowerRightLat = 32.278689;  // Lower-right latitude
+            //double lowerRightLon = -106.874525; // Lower-right longitude
+
+            // Define coordinates for scaling (latitude and longitude)
+            double upperLeftLat = 48.560188;  // Upper-left latitude
+            double upperLeftLon = -117.920058; // Upper-left longitude
+            double lowerRightLat = 48.522863;  // Lower-right latitude
+            double lowerRightLon = -117.824994; // Lower-right longitude
 
             var homePylon = pylons.homePylon();
 
