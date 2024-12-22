@@ -22,7 +22,7 @@ namespace SportClassAnalyzer
         public cFormState myFormState = new cFormState();
         private frmOptions optionsForm;
 
-        public cPylons myPylons = new cPylons();
+        public Course myCourse = new Course();
         public cRaceData myRaceData = new cRaceData();
 
         public List<cLapCrossings> myLapCrossings = new List<cLapCrossings>();
@@ -117,15 +117,11 @@ namespace SportClassAnalyzer
             Stopwatch stopwatch = Stopwatch.StartNew();
             Console.WriteLine("Loading Pylon Data");
             // Load the pylons
-            pylons pylons = null;
-            XmlSerializer serializer = new XmlSerializer(typeof(pylons));
-            using (FileStream fs = new FileStream(myFormState.sPylonFile, FileMode.Open))
-            {
-                pylons = (pylons)serializer.Deserialize(fs);
-            }
-            //write the pylons to a listbox
-            myPylons.pylonWpts = pylons.wpt.ToList();
-            myPylons.elevationInFeet = 0;//pylons.elevationInFeet; using zero makes the course length match the survey
+            Course theCourse = Course.LoadCourseFile(myFormState.sCourseFile);
+
+            theCourse.ElevationInFeet = 0;//pylons.elevationInFeet; using zero makes the course length match the survey
+
+            myCourse = theCourse;
 
             gpx raceData = null;
             if (buildFromRaceBox)
@@ -163,16 +159,16 @@ namespace SportClassAnalyzer
             if (raceBuilt)
             {
                 Stopwatch stopwatch = Stopwatch.StartNew();
-                myPylons.assignCartisianCoordinates(myPylons.elevationInFeet);
-                myPylons.assignSegments(myFormState);
+                myCourse.assignCartisianCoordinates(myCourse.ElevationInFeet);
+                myCourse.assignSegments(myFormState);
 
-                myRaceData.assignCartisianCoordinates(myPylons.homePylon());
+                myRaceData.assignCartisianCoordinates(myCourse.homePylon());
                 myRaceData.calculateSpeedsAndTruncate(100);
-                myRaceData.detectLaps(myPylons, out myLapCrossings, out myStartGateCrossings);
-                myRaceData.checkForCourseCuts(myFormState, myPylons, myLapCrossings, myStartGateCrossings, myRaceData.myLaps);
+                myRaceData.detectLaps(myCourse, out myLapCrossings, out myStartGateCrossings);
+                myRaceData.checkForCourseCuts(myFormState, myCourse, myLapCrossings, myStartGateCrossings, myRaceData.myLaps);
 
                 RacePlotModel racePlotModel = new RacePlotModel();
-                racePlotModel.CreatePlotModel(this, myFormState, myPylons, myRaceData, myLapCrossings, myStartGateCrossings);
+                racePlotModel.CreatePlotModel(this, myFormState, myCourse, myRaceData, myLapCrossings, myStartGateCrossings);
                 stopwatch.Stop();
                 Console.WriteLine($"Elapsed time: {stopwatch.ElapsedMilliseconds} ms".Pastel(Color.Chartreuse));
 
@@ -202,7 +198,7 @@ namespace SportClassAnalyzer
 
         public void clearAllData()
         {
-            myPylons = new cPylons();
+            myCourse = new Course();
             myRaceData = new cRaceData();
             myLapCrossings.Clear();
             myStartGateCrossings.Clear();
@@ -240,14 +236,26 @@ namespace SportClassAnalyzer
         private void openRaceCourseFile(object sender, EventArgs e)
         {
             OpenFileDialog openFileDialog1 = new OpenFileDialog();
-            openFileDialog1.Filter = "GPX files|*.gpx";
-            openFileDialog1.Title = "Select a GPX file";
+            openFileDialog1.Filter = "JSON files|*.json";
+            openFileDialog1.Title = "Select a JSON file";
             openFileDialog1.ShowDialog();
             if (openFileDialog1.FileName != "")
             {
                 clearAllData();
-                myFormState.sPylonFile = openFileDialog1.FileName;
-                //buildRace();
+                myFormState.sCourseFile = openFileDialog1.FileName;
+            }
+        }
+
+        private void selectRaceCourseFileToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            OpenFileDialog openFileDialog1 = new OpenFileDialog();
+            openFileDialog1.Filter = "JSON files|*.json";
+            openFileDialog1.Title = "Select a JSON file";
+            openFileDialog1.ShowDialog();
+            if (openFileDialog1.FileName != "")
+            {
+                Course dog = Course.LoadCourseFile(openFileDialog1.FileName);
+                dog.assignCartisianCoordinates();
             }
         }
     }

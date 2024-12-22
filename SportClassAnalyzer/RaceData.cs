@@ -81,13 +81,13 @@ namespace SportClassAnalyzer
         public List<racePoint> racePoints = new List<racePoint>();
         public List<cLap> myLaps = new List<cLap>();
 
-        public void assignCartisianCoordinates(pylonWpt homePylon)
+        public void assignCartisianCoordinates(Waypoint homePylon)
         {
             foreach (racePoint dp in racePoints)
             {
                 // Calculate distance and bearing from home pylon to this pylon
-                double distance = cLatLon.HaversineDistance(homePylon.lat, homePylon.lon, dp.lat, dp.lon, dp.altitudeInFeet);
-                double bearing = cLatLon.CalculateBearing(homePylon.lat, homePylon.lon, dp.lat, dp.lon);
+                double distance = cLatLon.HaversineDistance(homePylon.Latitude, homePylon.Longitude, dp.lat, dp.lon, dp.altitudeInFeet);
+                double bearing = cLatLon.CalculateBearing(homePylon.Latitude, homePylon.Longitude, dp.lat, dp.lon);
 
                 // Convert polar coordinates (distance, bearing) to Cartesian coordinates
                 dp.X = distance * Math.Sin(bearing * Math.PI / 180); // X-axis as east-west
@@ -96,20 +96,20 @@ namespace SportClassAnalyzer
             }
         }
 
-        public void checkForCourseCuts(cFormState formState, cPylons pylons, List<cLapCrossings> lapCrossings, List<cLapCrossings> startGateCrossings, List<cLap> laps)
+        public void checkForCourseCuts(cFormState formState, Course course, List<cLapCrossings> lapCrossings, List<cLapCrossings> startGateCrossings, List<cLap> laps)
         {
-            var coursePylons = pylons.outerCoursePylons();
-            var startPylons = pylons.startPylons(formState.courseType, false);
+            var coursePylons = course.outerCoursePylons();
+            var startPylons = course.startPylons(formState.courseType, false);
             switch(formState.courseType)
             {
                 case cFormState.CourseType.Inner:
-                    coursePylons = pylons.innerCoursePylons();
+                    coursePylons = course.innerCoursePylons();
                     break;
                 case cFormState.CourseType.Middle:
-                    coursePylons = pylons.middleCoursePylons();
+                    coursePylons = course.middleCoursePylons();
                     break;
                 case cFormState.CourseType.Outer:
-                    coursePylons = pylons.outerCoursePylons();
+                    coursePylons = course.outerCoursePylons();
                     break;
             }
             
@@ -184,15 +184,15 @@ namespace SportClassAnalyzer
             }
         }
 
-        public void detectLaps(cPylons pylons, out List<cLapCrossings> lapCrossings, out List<cLapCrossings> startGateCrossings)
+        public void detectLaps(Course course, out List<cLapCrossings> lapCrossings, out List<cLapCrossings> startGateCrossings)
         {
             myLaps.Clear();
-            cPoint homePylon = pylons.homePylonPoint();
-            cPoint startFinishPylon = pylons.startFinishPylonPoint();
+            cPoint homePylon = course.homePylonPoint();
+            cPoint startFinishPylon = course.startFinishPylonPoint();
 
             //List<cLapCrossings> lapCrossings = new List<cLapCrossings>();
 
-            List<cPoint> startGates = pylons.gatePylonPoints();
+            List<cPoint> startGates = course.gatePylonPoints();
             List<cLapCrossings> test = new List<cLapCrossings>();
             int numStartCrossings = LineCrossingDetector.DetectCrossings(racePoints, startGates[0], startGates[1], out startGateCrossings);
             if( numStartCrossings > 0 && startGateCrossings[0].dataPoint > 5)
@@ -281,7 +281,7 @@ namespace SportClassAnalyzer
                         double elapsedTime = elapsedTimeSpan.TotalMilliseconds / 1000.0;
 
                         lap.elapsedTime = elapsedTime;
-                        lap.ptpSpeed = pylons.segments.Sum() / lap.elapsedTime * 3600 / 5280;
+                        lap.ptpSpeed = course.segments.Sum() / lap.elapsedTime * 3600 / 5280;
                         myLaps.Add(lap);
                         Console.WriteLine($"Lap {i}");
                         Console.WriteLine($"Elapsed Time: {Math.Round(lap.elapsedTime, 2).ToString("F2")} seconds");

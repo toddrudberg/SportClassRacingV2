@@ -11,8 +11,9 @@ namespace SportClassAnalyzer
     public class cFormState
     {
         //"C:\LocalDev\SportClassRacingV2\RaceColville.gpx"
-        //public string sPylonFile { get; set; } = @"C:\LocalDev\SportClassRacingV2\SportClassOuterCourse - Middle.gpx";
-        public string sPylonFile { get; set; } = @"C:\LocalDev\SportClassRacingV2\RaceColville.gpx";
+        public string sCourseFile { get; set; } = @"C:\LocalDev\SportClassRacingV2\SportClassOuterCourse - Middle.gpx";
+        public string sRaceCourseImageFile { get; set; } = @"C:\LocalDev\SportClassRacingV2\SportClassOuterCourse.png";
+        //public string sPylonFile { get; set; } = @"C:\LocalDev\SportClassRacingV2\RaceColville.gpx";
         
         public string sRaceDataFile { get; set; } = @"C:\LocalDev\SportClassRacing\Slater Data\20241018_142045.gpx";
         public bool showStartLap { get; set; } = true;

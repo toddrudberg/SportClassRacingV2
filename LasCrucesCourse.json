@@ -1,0 +1,140 @@
+{
+  "course": {
+    "elevationInFeet": 4450,
+    "courseImage": {
+      "imageFile": "C:\\LocalDev\\SportClassRacingV2\\LasCrucesMap.PNG",
+      "upperLeft": {
+        "latitude": 32.318633,
+        "longitude": -106.961483
+      },
+      "lowerRight": {
+        "latitude": 32.278689,
+        "longitude": -106.874525
+      }
+    },
+    "pylons": {
+      "waypoints": [
+        {
+          "latitude": 32.288416,
+          "longitude": -106.920656,
+          "name": "Home"
+        },
+        {
+          "latitude": 32.291205,
+          "longitude": -106.908747,
+          "name": "oP1"
+        },
+        {
+          "latitude": 32.300209,
+          "longitude": -106.904944,
+          "name": "oP2"
+        },
+        {
+          "latitude": 32.307352,
+          "longitude": -106.908115,
+          "name": "oP3"
+        },
+        {
+          "latitude": 32.312252,
+          "longitude": -106.925452,
+          "name": "oP4"
+        },
+        {
+          "latitude": 32.313670,
+          "longitude": -106.942690,
+          "name": "oP5"
+        },
+        {
+          "latitude": 32.300650,
+          "longitude": -106.955600,
+          "name": "oP6"
+        },
+        {
+          "latitude": 32.289329,
+          "longitude": -106.939065,
+          "name": "oP7"
+        },
+        {
+          "latitude": 32.286458,
+          "longitude": -106.920644,
+          "name": "StartFinish"
+        },
+        {
+          "latitude": 32.279343,
+          "longitude": -106.911869,
+          "name": "Gate1"
+        },
+        {
+          "latitude": 32.278689,
+          "longitude": -106.874525,
+          "name": "Gate2"
+        },
+        {
+          "latitude": 32.291205,
+          "longitude": -106.908747,
+          "name": "mP1"
+        },
+        {
+          "latitude": 32.300209,
+          "longitude": -106.904944,
+          "name": "mP2"
+        },
+        {
+          "latitude": 32.307352,
+          "longitude": -106.908115,
+          "name": "mP3"
+        },
+        {
+          "latitude": 32.312252,
+          "longitude": -106.925452,
+          "name": "mP4"
+        },
+        {
+          "latitude": 32.307899,
+          "longitude": -106.941432,
+          "name": "mP5"
+        },
+        {
+          "latitude": 32.300463,
+          "longitude": -106.945405,
+          "name": "mP6"
+        },
+        {
+          "latitude": 32.289329,
+          "longitude": -106.939065,
+          "name": "mP7"
+        },
+        {
+          "latitude": 32.291205,
+          "longitude": -106.908747,
+          "name": "iP1"
+        },
+        {
+          "latitude": 32.299080,
+          "longitude": -106.907600,
+          "name": "iP2"
+        },
+        {
+          "latitude": 32.302710,
+          "longitude": -106.916500,
+          "name": "iP3"
+        },
+        {
+          "latitude": 32.301250,
+          "longitude": -106.925330,
+          "name": "iP4"
+        },
+        {
+          "latitude": 32.295200,
+          "longitude": -106.932470,
+          "name": "iP5"
+        },
+        {
+          "latitude": 32.290200,
+          "longitude": -106.930640,
+          "name": "iP6"
+        }
+      ]
+    }
+  }
+}

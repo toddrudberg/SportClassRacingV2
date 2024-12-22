@@ -34,7 +34,7 @@ namespace SportClassAnalyzer
         };
 
         private PlotView currentPlotView;
-        public void CreatePlotModel(System.Windows.Forms.Form form, cFormState formState, cPylons pylons, cRaceData raceData, List<cLapCrossings> lapCrossings, List<cLapCrossings> startGateCrossings)
+        public void CreatePlotModel(System.Windows.Forms.Form form, cFormState formState, Course course, cRaceData raceData, List<cLapCrossings> lapCrossings, List<cLapCrossings> startGateCrossings)
         {
             List<racePoint> racePoints = raceData.racePoints;
             string title = Path.GetFileNameWithoutExtension(formState.sRaceDataFile);
@@ -53,10 +53,10 @@ namespace SportClassAnalyzer
             };
             cPoint upperLeft;
             cPoint lowerRight;
-            plotBackGroundImage(plotModel, pylons, out upperLeft, out lowerRight);
-            plotPylons(pylons, plotModel, formState);
+            plotBackGroundImage(plotModel, course, out upperLeft, out lowerRight);
+            plotPylons(course, plotModel, formState);
             plotRaceData(racePoints, lapCrossings, startGateCrossings, plotModel);
-            plotLapSummary(raceData.myLaps, plotModel, upperLeft, lowerRight,pylons.segments.Sum());
+            plotLapSummary(raceData.myLaps, plotModel, upperLeft, lowerRight, course.segments.Sum());
 
             int menuBarHeight = 30; // Adjust this height based on your menu bar size
 
@@ -81,13 +81,13 @@ namespace SportClassAnalyzer
             form.Refresh();
         }
 
-        private void plotBackGroundImage(PlotModel plotModel, cPylons pylons, out cPoint upperLeft, out cPoint lowerRight)
+        private void plotBackGroundImage(PlotModel plotModel, Course course, out cPoint upperLeft, out cPoint lowerRight)
         {
             upperLeft = new cPoint(0, 0);
             lowerRight = new cPoint(0, 0);
             // Load your image
-            //var imagePath = @"C:\LocalDev\SportClassRacingV2\LasCrucesMap.PNG"; // Path to the Google Earth image
-            var imagePath = @"C:\LocalDev\SportClassRacingV2\ColvilleRaceCourse.png"; // Path to the Google Earth image
+            var imagePath = @"C:\LocalDev\SportClassRacingV2\LasCrucesMap.PNG"; // Path to the Google Earth image
+            //var imagePath = @"C:\LocalDev\SportClassRacingV2\ColvilleRaceCourse.png"; // Path to the Google Earth image
             byte[] imageBytes;
 
             using (var bitmap = (Bitmap)Image.FromFile(imagePath))
@@ -103,28 +103,28 @@ namespace SportClassAnalyzer
             var oxyImage = new OxyImage(imageBytes);
 
             // Define coordinates for scaling (latitude and longitude)
-            //double upperLeftLat = 32.318633;  // Upper-left latitude
-            //double upperLeftLon = -106.961483; // Upper-left longitude
-            //double lowerRightLat = 32.278689;  // Lower-right latitude
-            //double lowerRightLon = -106.874525; // Lower-right longitude
+            double upperLeftLat = 32.318633;  // Upper-left latitude
+            double upperLeftLon = -106.961483; // Upper-left longitude
+            double lowerRightLat = 32.278689;  // Lower-right latitude
+            double lowerRightLon = -106.874525; // Lower-right longitude
 
             // Define coordinates for scaling (latitude and longitude)
-            double upperLeftLat = 48.560188;  // Upper-left latitude
-            double upperLeftLon = -117.920058; // Upper-left longitude
-            double lowerRightLat = 48.522863;  // Lower-right latitude
-            double lowerRightLon = -117.824994; // Lower-right longitude
+            // double upperLeftLat = 48.560188;  // Upper-left latitude
+            // double upperLeftLon = -117.920058; // Upper-left longitude
+            // double lowerRightLat = 48.522863;  // Lower-right latitude
+            // double lowerRightLon = -117.824994; // Lower-right longitude
 
-            var homePylon = pylons.homePylon();
+            var homePylon = course.homePylon();
 
             // Calculate Cartesian coordinates for upper-left corner
-            double distance = cLatLon.HaversineDistance(homePylon.lat, homePylon.lon, upperLeftLat, upperLeftLon, pylons.elevationInFeet);
-            double bearing = cLatLon.CalculateBearing(homePylon.lat, homePylon.lon, upperLeftLat, upperLeftLon);
+            double distance = cLatLon.HaversineDistance(homePylon.Latitude, homePylon.Longitude, upperLeftLat, upperLeftLon, course.ElevationInFeet);
+            double bearing = cLatLon.CalculateBearing(homePylon.Latitude, homePylon.Longitude, upperLeftLat, upperLeftLon);
             double upperLeftX = distance * Math.Sin(bearing * Math.PI / 180); // X-axis as east-west
             double upperLeftY = distance * Math.Cos(bearing * Math.PI / 180); // Y-axis as north-south
 
             // Calculate Cartesian coordinates for lower-right corner
-            distance = cLatLon.HaversineDistance(homePylon.lat, homePylon.lon, lowerRightLat, lowerRightLon, pylons.elevationInFeet);
-            bearing = cLatLon.CalculateBearing(homePylon.lat, homePylon.lon, lowerRightLat, lowerRightLon);
+            distance = cLatLon.HaversineDistance(homePylon.Latitude, homePylon.Longitude, lowerRightLat, lowerRightLon, course.ElevationInFeet);
+            bearing = cLatLon.CalculateBearing(homePylon.Latitude, homePylon.Longitude, lowerRightLat, lowerRightLon);
             double lowerRightX = distance * Math.Sin(bearing * Math.PI / 180); // X-axis as east-west
             double lowerRightY = distance * Math.Cos(bearing * Math.PI / 180); // Y-axis as north-south
 
@@ -196,7 +196,7 @@ namespace SportClassAnalyzer
             plotModel.Annotations.Add(imageAnnotation);
         }
 
-        private void plotPylons(cPylons pylons, PlotModel plotModel, cFormState formState)
+        private void plotPylons(Course course, PlotModel plotModel, cFormState formState)
         {
             // Create a scatter series
             var scatterSeries = new ScatterSeries
@@ -207,20 +207,20 @@ namespace SportClassAnalyzer
             };
             var rubberbandSeries = new LineSeries { Color = OxyColors.Black };
 
-            var activePylons = pylons.outerCoursePylons();
-            List<pylonWpt> startPylons = new List<pylonWpt>();
-            startPylons = pylons.startPylons(formState.courseType, true);
+            var activePylons = course.outerCoursePylons();
+            List<Waypoint> startPylons = new List<Waypoint>();
+            startPylons = course.startPylons(formState.courseType, true);
 
             switch (formState.courseType)
             {
                 case cFormState.CourseType.Inner:
-                    activePylons = pylons.innerCoursePylons();
+                    activePylons = course.innerCoursePylons();
                     break;
                 case cFormState.CourseType.Outer:
-                    activePylons = pylons.outerCoursePylons();
+                    activePylons = course.outerCoursePylons();
                     break;
                 case cFormState.CourseType.Middle:
-                    activePylons = pylons.middleCoursePylons();
+                    activePylons = course.middleCoursePylons();
                     break;
             }
 
@@ -232,7 +232,7 @@ namespace SportClassAnalyzer
 
                 var textAnnotation = new TextAnnotation
                 {
-                    Text = pylon.name, // Assuming each pylon has a Name property
+                    Text = pylon.Name, // Assuming each pylon has a Name property
                     TextPosition = new DataPoint(pylon.X, pylon.Y),
                     TextColor = OxyColors.Black,
                     FontWeight = FontWeights.Bold,
@@ -243,7 +243,7 @@ namespace SportClassAnalyzer
                 // Add the annotation to the plot model
                 plotModel.Annotations.Add(textAnnotation);
             }
-            var homePylon = pylons.homePylonPoint();
+            var homePylon = course.homePylonPoint();
             rubberbandSeries.Points.Add(new DataPoint(homePylon.X, homePylon.Y));
 
             var rubberbandSeriesStart = new LineSeries { Color = OxyColors.Black };
@@ -255,11 +255,11 @@ namespace SportClassAnalyzer
                     scatterSeries.Points.Add(new ScatterPoint((double)pylon.X, (double)pylon.Y, 5, 5));
                     rubberbandSeriesStart.Points.Add(new DataPoint(pylon.X, pylon.Y));
 
-                    if (pylon.name != "")
+                    if (pylon.Name != "")
                     {
                         var textAnnotation = new TextAnnotation
                         {
-                            Text = pylon.name, // Assuming each pylon has a Name property
+                            Text = pylon.Name, // Assuming each pylon has a Name property
                             TextPosition = new DataPoint(pylon.X, pylon.Y),
                             TextColor = OxyColors.Black,
                             FontWeight = FontWeights.Bold,
@@ -282,7 +282,7 @@ namespace SportClassAnalyzer
             plotModel.Series.Add(rubberbandSeries);
             plotModel.Series.Add(rubberbandSeriesStart);
 
-            var startPylon = pylons.startFinishPylon();
+            var startPylon = course.startFinishPylon();
 
             //draw a black line between homePylon and startPylon
             var lineSeries = new LineSeries { Color = OxyColors.Black };
