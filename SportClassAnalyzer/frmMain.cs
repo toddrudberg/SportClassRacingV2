@@ -229,6 +229,7 @@ namespace SportClassAnalyzer
             {
                 clearAllData();
                 myFormState.sRaceDataFile = openFileDialog1.FileName;
+                myFormState.Save();
                 buildRace(true);
             }
         }
@@ -243,6 +244,7 @@ namespace SportClassAnalyzer
             {
                 clearAllData();
                 myFormState.sCourseFile = openFileDialog1.FileName;
+                myFormState.Save();
             }
         }
 
