@@ -27,6 +27,18 @@ namespace SportClassAnalyzer
 
             return homePylon;
         }
+        public Waypoint centerPylon()
+        {
+            Waypoint centerPylon = Pylons.Waypoints.Where(p => p.Name == "Center").FirstOrDefault();
+
+            if (centerPylon == null)
+            {
+                Console.WriteLine("didn't find center pylon");
+                centerPylon = new Waypoint();
+            }
+
+            return centerPylon;
+        }
         public cPoint homePylonPoint()
         {
             Waypoint homePylon = this.homePylon();
@@ -69,7 +81,7 @@ namespace SportClassAnalyzer
 
         public List<Waypoint> outerCoursePylons()
         {
-            List<Waypoint> coursePylons = Pylons.Waypoints.Where(p => p.Name != "Gate1" && p.Name != "Gate2" && p.Name != "StartFinish").ToList();
+            List<Waypoint> coursePylons = Pylons.Waypoints.Where(p => p.Name != "Gate1" && p.Name != "Gate2" && p.Name != "StartFinish" && p.Name != "Center").ToList();
             // remove all points that start with MP and IP
             coursePylons = coursePylons.Where(p => !p.Name.StartsWith("mP") && !p.Name.StartsWith("iP")).ToList();
             return coursePylons;
@@ -77,7 +89,7 @@ namespace SportClassAnalyzer
 
         public List<Waypoint> middleCoursePylons()
         {
-            List<Waypoint> coursePylons = Pylons.Waypoints.Where(p => p.Name != "Gate1" && p.Name != "Gate2" && p.Name != "StartFinish").ToList();
+            List<Waypoint> coursePylons = Pylons.Waypoints.Where(p => p.Name != "Gate1" && p.Name != "Gate2" && p.Name != "StartFinish" && p.Name != "Center").ToList();
             // remove all points that start with MP and IP
             coursePylons = coursePylons.Where(p => !p.Name.StartsWith("oP") && !p.Name.StartsWith("iP")).ToList();
             return coursePylons;
@@ -85,7 +97,7 @@ namespace SportClassAnalyzer
         }
         public List<Waypoint> innerCoursePylons()
         {
-            List<Waypoint> coursePylons = Pylons.Waypoints.Where(p => p.Name != "Gate1" && p.Name != "Gate2" && p.Name != "StartFinish").ToList();
+            List<Waypoint> coursePylons = Pylons.Waypoints.Where(p => p.Name != "Gate1" && p.Name != "Gate2" && p.Name != "StartFinish" && p.Name != "Center").ToList();
             // remove all points that start with MP and IP
             coursePylons = coursePylons.Where(p => !p.Name.StartsWith("oP") && !p.Name.StartsWith("mP")).ToList();
             return coursePylons;
@@ -163,6 +175,28 @@ namespace SportClassAnalyzer
             else
             {
                 Console.WriteLine("Home Pylon not found");
+            }
+        }
+
+        public void assignTheta()
+        {
+            Waypoint homePylon = this.homePylon();
+            Waypoint centerPylon = this.centerPylon();
+            // calculate the angle of each pylon relative to the line between the home pylon and the center pylon
+            double theta = -Math.Atan2(-centerPylon.X, -centerPylon.Y);
+            theta = theta < 0 ? theta + 2 * Math.PI : theta;
+            double thetaOffset = theta.R2D();
+            homePylon.Theta = 0.0;
+            Console.WriteLine($"{centerPylon.Name}, {Math.Round(centerPylon.Theta)}");
+            foreach (var pylon in Pylons.Waypoints)
+            {
+                if (pylon.Name != "Home" && pylon.Name != "Center")
+                {
+                    theta = -Math.Atan2(pylon.X - centerPylon.X, pylon.Y - centerPylon.Y) - thetaOffset.D2R();
+                    theta = theta < 0 ? theta + 2 * Math.PI : theta;                    
+                    pylon.Theta = theta.R2D();
+                    Console.WriteLine($"{pylon.Name}, {Math.Round(pylon.Theta)}");
+                }
             }
         }
 
@@ -271,6 +305,7 @@ namespace SportClassAnalyzer
         public string Name { get; set; }
         public double X { get; set; }
         public double Y { get; set; }
+        public double Theta { get; set; }
 
         public Waypoint Clone()
         {
@@ -280,7 +315,8 @@ namespace SportClassAnalyzer
                 Latitude = this.Latitude,
                 Longitude = this.Longitude,
                 X = this.X,
-                Y = this.Y
+                Y = this.Y,
+                Theta = this.Theta
             };
         }
     }

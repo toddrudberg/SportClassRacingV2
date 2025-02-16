@@ -9,6 +9,16 @@ namespace SportClassAnalyzer
 
     public class _2dVector
     {
+        public static double calculateTheta(Waypoint centerPylon, cPoint pt)
+        {
+            // calculate the angle of each pylon relative to the line between the home pylon and the center pylon
+            double thetaOffset = -Math.Atan2(-centerPylon.X, -centerPylon.Y);
+            thetaOffset = thetaOffset < 0 ? thetaOffset + 2 * Math.PI : thetaOffset;
+            thetaOffset = thetaOffset.R2D();
+            double theta = -Math.Atan2(pt.X - centerPylon.X, pt.Y - centerPylon.Y) - thetaOffset.D2R();
+            theta = theta < 0 ? theta + 2 * Math.PI : theta;                    
+            return theta.R2D();            
+        }
     }
 
     public class cPoint

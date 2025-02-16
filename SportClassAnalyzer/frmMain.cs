@@ -160,9 +160,11 @@ namespace SportClassAnalyzer
             {
                 Stopwatch stopwatch = Stopwatch.StartNew();
                 myCourse.assignCartisianCoordinates(myCourse.ElevationInFeet);
+                myCourse.assignTheta();
                 myCourse.assignSegments(myFormState);
 
                 myRaceData.assignCartisianCoordinates(myCourse.homePylon());
+
                 myRaceData.calculateSpeedsAndTruncate(100);
                 myRaceData.detectLaps(myCourse, out myLapCrossings, out myStartGateCrossings);
                 myRaceData.checkForCourseCuts(myFormState, myCourse, myLapCrossings, myStartGateCrossings, myRaceData.myLaps);

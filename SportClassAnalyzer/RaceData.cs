@@ -67,6 +67,7 @@ namespace SportClassAnalyzer
         public int dataPoint;
         public DateTime crossingTime;
         public cPoint crossingPoint;
+        public double theta;
 
         public cLapCrossings(int dataPoint, DateTime crossingTime, cPoint crossingPoint)
         {
@@ -115,6 +116,7 @@ namespace SportClassAnalyzer
             
             List<cLapCrossings> cuts;
 
+            Console.WriteLine("\nChecking for course cuts");
             if (lapCrossings.Count > 1)
             {
                 for (int i = 0; i < lapCrossings.Count; i++)
@@ -122,6 +124,7 @@ namespace SportClassAnalyzer
                     int startOfLap = 0;
                     int endOfLap = 0;
                     int nPylonCuts = 0;
+                    int nCourseCuts = 0;
                     bool evaluateStartLap = false;
 
                     if (i == 0)
@@ -144,44 +147,66 @@ namespace SportClassAnalyzer
 
                     List<racePoint> lapData = racePoints.GetRange(startOfLap, endOfLap - startOfLap);
 
-                    bool insideCourse = false;
                     var activePylons = coursePylons;
                     if (evaluateStartLap)
                     {
                         activePylons = startPylons;
                     }
+                    List<cLapCrossings> cutsThisLap = new List<cLapCrossings>();
                     for (int j = 0; j < activePylons.Count - 1; j++)
                     {
                         cPoint p1 = new cPoint(activePylons[j].X, activePylons[j].Y);
                         cPoint p2 = new cPoint(activePylons[j + 1].X, activePylons[j + 1].Y);
                         int cut = LineCrossingDetector.DetectCrossings(lapData, p1, p2, out cuts);
-                        if (insideCourse)
+                        cutsThisLap.AddRange(cuts);
+                        //Console.WriteLine($"Pylon {j + 1} has {cuts.Count} crossings");
+                    }   
+                    string lapType = evaluateStartLap ? "Start Lap" : $"Lap {i}";
+                    Console.WriteLine($"{lapType} has {cutsThisLap.Count} crossings"); 
+                    foreach (cLapCrossings crossing in cutsThisLap)
+                    {
+                       crossing.theta = _2dVector.calculateTheta(course.centerPylon(), crossing.crossingPoint);
+                       Console.WriteLine($"Cut detected at: X={crossing.crossingPoint.X}, Y={crossing.crossingPoint.Y}, theta={crossing.theta}");
+                    }
+                    for (int j = 0; j < cutsThisLap.Count - 1; j+=2)
+                    {
+                        double theta1 = cutsThisLap[j].theta;
+                        double theta2 = cutsThisLap[j + 1].theta;
+                        int pylon1 = 0;
+                        int pylon2 = 0;
+                        for (int k = 0; k < activePylons.Count; k++)
                         {
-                            if (cut == 0)
+                            if (theta1 < activePylons[k].Theta)
                             {
-                                nPylonCuts++;
-                            }
-                            else if (cut == 1)
-                            {
-                                insideCourse = false;
+                                pylon1 = k;
+                                for( int l = 0; l < activePylons.Count; l++)
+                                {
+                                    if (theta2 < activePylons[l].Theta)
+                                    {
+                                        pylon2 = l;
+                                        break;
+                                    }
+                                }
+                                break;
                             }
                         }
-                        else
+                        if (pylon1 != pylon2)
                         {
-                            if (cut == 1 )
-                            {
-                                nPylonCuts++;
-                                insideCourse = true;
-                            }
-                            if (cut == 2 )
-                            {
-                                nPylonCuts++;
-                            }
+                            nPylonCuts += pylon2 - pylon1;
                         }
-                    }                 
+                        if( pylon1 == pylon2)
+                        {
+                            //it's a course cut, but not a pylon cut.  
+                            nCourseCuts++;
+                        }
+                    }
+
+                    Console.WriteLine($"{lapType} has {nCourseCuts} course cuts and {nPylonCuts} pylon cuts");
+
                     myLaps[i].nCuts = nPylonCuts;
                 }
             }
+            Console.WriteLine();
         }
 
         public void detectLaps(Course course, out List<cLapCrossings> lapCrossings, out List<cLapCrossings> startGateCrossings)
