@@ -10,7 +10,11 @@
       "lowerRight": {
         "latitude": 32.278689,
         "longitude": -106.874525
-      }
+      },
+      "offsetX": -45,
+      "offsetY": 70,
+      "scaleX": 1.005,
+      "scaleY": 1.005
     },
     "pylons": {
       "waypoints": [
@@ -18,6 +22,11 @@
           "latitude": 32.288416,
           "longitude": -106.920656,
           "name": "Home"
+        },
+        {
+          "latitude": 32.292540,
+          "longitude": -106.920652,
+          "name": "Center"
         },
         {
           "latitude": 32.291205,

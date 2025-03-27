@@ -2,7 +2,7 @@
   "course": {
     "elevationInFeet": 1883,
     "courseImage": {
-      "imageFile": "C:\\LocalDev\\SportClassRacingV2\\ColvilleRaceCourse.png",
+      "imageFile": "C:\\LocalDev\\SportClassRacingV2\\ColvilleRaceCourse-2.png",
       "upperLeft": {
         "latitude": 48.560188,
         "longitude": -117.920058
@@ -10,7 +10,11 @@
       "lowerRight": {
         "latitude": 48.522863,
         "longitude": -117.824994
-      }
+      },
+      "offsetX": 165.0,
+      "offsetY": -70.0,
+      "scaleX": 1.0,
+      "scaleY": 1.0
     },
     "pylons": {
       "waypoints": [

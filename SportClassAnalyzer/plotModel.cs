@@ -55,7 +55,7 @@ namespace SportClassAnalyzer
             cPoint lowerRight;
             plotBackGroundImage(plotModel, course, out upperLeft, out lowerRight);
             plotPylons(course, plotModel, formState);
-            plotRaceData(racePoints, lapCrossings, startGateCrossings, plotModel);
+            plotRaceData(racePoints, lapCrossings, startGateCrossings, plotModel, course);
             plotLapSummary(raceData.myLaps, plotModel, upperLeft, lowerRight, course.segments.Sum());
 
             int menuBarHeight = 30; // Adjust this height based on your menu bar size
@@ -106,15 +106,20 @@ namespace SportClassAnalyzer
             // Calculate Cartesian coordinates for upper-left corner
             double distance = cLatLon.HaversineDistance(homePylon.Latitude, homePylon.Longitude, course.CourseImage.UpperLeft.Latitude, course.CourseImage.UpperLeft.Longitude, course.ElevationInFeet);
             double bearing = cLatLon.CalculateBearing(homePylon.Latitude, homePylon.Longitude, course.CourseImage.UpperLeft.Latitude, course.CourseImage.UpperLeft.Longitude);
-            double upperLeftX = distance * Math.Sin(bearing * Math.PI / 180); // X-axis as east-west
-            double upperLeftY = distance * Math.Cos(bearing * Math.PI / 180); // Y-axis as north-south
+            double upperLeftX = distance * Math.Sin(bearing * Math.PI / 180) + course.CourseImage.OffsetX; // X-axis as east-west with offset
+            double upperLeftY = distance * Math.Cos(bearing * Math.PI / 180) + course.CourseImage.OffsetY; // Y-axis as north-south with offset
 
             // Calculate Cartesian coordinates for lower-right corner
             distance = cLatLon.HaversineDistance(homePylon.Latitude, homePylon.Longitude, course.CourseImage.LowerRight.Latitude, course.CourseImage.LowerRight.Longitude, course.ElevationInFeet);
             bearing = cLatLon.CalculateBearing(homePylon.Latitude, homePylon.Longitude, course.CourseImage.LowerRight.Latitude, course.CourseImage.LowerRight.Longitude);
-            double lowerRightX = distance * Math.Sin(bearing * Math.PI / 180); // X-axis as east-west
-            double lowerRightY = distance * Math.Cos(bearing * Math.PI / 180); // Y-axis as north-south
+            double lowerRightX = distance * Math.Sin(bearing * Math.PI / 180) + course.CourseImage.OffsetX; // X-axis as east-west with offset
+            double lowerRightY = distance * Math.Cos(bearing * Math.PI / 180) + course.CourseImage.OffsetY; // Y-axis as north-south with offset
 
+            Console.WriteLine($"Upper Left: {upperLeftX}, {upperLeftY}");
+            Console.WriteLine($"Lower Right: {lowerRightX}, {lowerRightY}");
+
+            Console.WriteLine($"Image Offset X: {course.CourseImage.OffsetX}");
+            Console.WriteLine($"Image Offset Y: {course.CourseImage.OffsetY}");
 
             // Set padding to add a little extra space around the edges
             double padding = 5;
@@ -211,16 +216,24 @@ namespace SportClassAnalyzer
                     break;
             }
 
+            // Apply scale factors to coordinates
+            double scaleX = course.CourseImage.ScaleX;
+            double scaleY = course.CourseImage.ScaleY;
+            
             foreach( var pylon in activePylons)
             {
+                // Scale the coordinates for plotting
+                double scaledX = pylon.X * scaleX;
+                double scaledY = pylon.Y * scaleY;
+                
                 // Add the data points to the scatter series
-                scatterSeries.Points.Add(new ScatterPoint((double)pylon.X, (double)pylon.Y, 5, 5));
-                rubberbandSeries.Points.Add(new DataPoint(pylon.X, pylon.Y));
+                scatterSeries.Points.Add(new ScatterPoint(scaledX, scaledY, 5, 5));
+                rubberbandSeries.Points.Add(new DataPoint(scaledX, scaledY));
 
                 var textAnnotation = new TextAnnotation
                 {
                     Text = pylon.Name, // Assuming each pylon has a Name property
-                    TextPosition = new DataPoint(pylon.X, pylon.Y),
+                    TextPosition = new DataPoint(scaledX, scaledY),
                     TextColor = OxyColors.Black,
                     FontWeight = FontWeights.Bold,
                     FontSize = 12, // Adjust font size as needed
@@ -231,23 +244,30 @@ namespace SportClassAnalyzer
                 plotModel.Annotations.Add(textAnnotation);
             }
             var homePylon = course.homePylonPoint();
-            rubberbandSeries.Points.Add(new DataPoint(homePylon.X, homePylon.Y));
+            // Scale the home pylon coordinates
+            double scaledHomeX = homePylon.X * scaleX;
+            double scaledHomeY = homePylon.Y * scaleY;
+            rubberbandSeries.Points.Add(new DataPoint(scaledHomeX, scaledHomeY));
 
             var rubberbandSeriesStart = new LineSeries { Color = OxyColors.Black };
             if (formState.showStartLap && !formState.courseType.Equals(cFormState.CourseType.Outer))
             {
                 foreach (var pylon in startPylons)
                 {
+                    // Scale the coordinates for plotting
+                    double scaledX = pylon.X * scaleX;
+                    double scaledY = pylon.Y * scaleY;
+                    
                     // Add the data points to the scatter series
-                    scatterSeries.Points.Add(new ScatterPoint((double)pylon.X, (double)pylon.Y, 5, 5));
-                    rubberbandSeriesStart.Points.Add(new DataPoint(pylon.X, pylon.Y));
+                    scatterSeries.Points.Add(new ScatterPoint(scaledX, scaledY, 5, 5));
+                    rubberbandSeriesStart.Points.Add(new DataPoint(scaledX, scaledY));
 
                     if (pylon.Name != "")
                     {
                         var textAnnotation = new TextAnnotation
                         {
                             Text = pylon.Name, // Assuming each pylon has a Name property
-                            TextPosition = new DataPoint(pylon.X, pylon.Y),
+                            TextPosition = new DataPoint(scaledX, scaledY),
                             TextColor = OxyColors.Black,
                             FontWeight = FontWeights.Bold,
                             FontSize = 12, // Adjust font size as needed
@@ -259,7 +279,7 @@ namespace SportClassAnalyzer
                 }
                 if (formState.courseType == cFormState.CourseType.Inner)
                 {
-                    rubberbandSeriesStart.Points.Add(new DataPoint(homePylon.X, homePylon.Y));
+                    rubberbandSeriesStart.Points.Add(new DataPoint(scaledHomeX, scaledHomeY));
                 }
             }
             
@@ -273,8 +293,12 @@ namespace SportClassAnalyzer
 
             //draw a black line between homePylon and startPylon
             var lineSeries = new LineSeries { Color = OxyColors.Black };
-            lineSeries.Points.Add(new DataPoint((double)homePylon.X, (double)homePylon.Y));
-            lineSeries.Points.Add(new DataPoint((double)startPylon.X, (double)startPylon.Y));
+            lineSeries.Points.Add(new DataPoint(scaledHomeX, scaledHomeY));
+            
+            // Scale the start/finish pylon coordinates
+            double scaledStartX = startPylon.X * scaleX;
+            double scaledStartY = startPylon.Y * scaleY;
+            lineSeries.Points.Add(new DataPoint(scaledStartX, scaledStartY));
             plotModel.Series.Add(lineSeries);
 
 
@@ -341,16 +365,20 @@ namespace SportClassAnalyzer
             }
         }
 
-        private void plotRaceData(List<racePoint> myRaceData, List<cLapCrossings> lapCrossings, List<cLapCrossings> startGateCrossings, PlotModel plotModel)
+        private void plotRaceData(List<racePoint> myRaceData, List<cLapCrossings> lapCrossings, List<cLapCrossings> startGateCrossings, PlotModel plotModel, Course course)
         {
+            // Get the scale factors from the course
+            double scaleX = course.CourseImage.ScaleX;
+            double scaleY = course.CourseImage.ScaleY;
+            
             // Create a new instance of PlotForm
-
             var lineSeries = new LineSeries { Color = OxyColors.Green };
             // Use a different color for each lap
             for (int i = 0; i < lapCrossings[0].dataPoint; i++)
             {
-                double X = myRaceData[i].X;
-                double Y = myRaceData[i].Y;
+                // Scale the coordinates for plotting
+                double X = myRaceData[i].X * scaleX;
+                double Y = myRaceData[i].Y * scaleY;
                 // Add the data points to a line series
                 lineSeries.Points.Add(new DataPoint(X, Y));
             }
@@ -368,9 +396,9 @@ namespace SportClassAnalyzer
 
                 for (int i = lapCrossings[nLap].dataPoint; i < lapCrossings[nLap + 1].dataPoint; i++)
                 {
-                    // Convert latitude and longitude from decimal to double
-                    double X = (double)myRaceData[i].X;
-                    double Y = (double)myRaceData[i].Y;
+                    // Scale the coordinates for plotting
+                    double X = (double)myRaceData[i].X * scaleX;
+                    double Y = (double)myRaceData[i].Y * scaleY;
                     lineSeriesLaps.Points.Add(new DataPoint(X, Y));
                 }
                 plotModel.Series.Add(lineSeriesLaps);
@@ -385,7 +413,10 @@ namespace SportClassAnalyzer
 
             for (int nLap = 0; nLap < lapCrossings.Count - 1; nLap++)
             {
-                ScatterPoint crossingPoint = new (lapCrossings[nLap].crossingPoint.X, lapCrossings[nLap].crossingPoint.Y);
+                // Scale the crossing point coordinates
+                double crossingX = lapCrossings[nLap].crossingPoint.X * scaleX;
+                double crossingY = lapCrossings[nLap].crossingPoint.Y * scaleY;
+                ScatterPoint crossingPoint = new (crossingX, crossingY);
                 scatterSeries.Points.Add(crossingPoint);
             }
             plotModel.Series.Add(scatterSeries);
@@ -395,9 +426,9 @@ namespace SportClassAnalyzer
                 var lineSeriesLaps = new LineSeries { Color = OxyColors.Blue };
                 for (int i = 0; i < myRaceData.Count; i++)
                 {
-                    // Convert latitude and longitude from decimal to double
-                    double X = (double)myRaceData[i].X;
-                    double Y = (double)myRaceData[i].Y;
+                    // Scale the coordinates for plotting
+                    double X = (double)myRaceData[i].X * scaleX;
+                    double Y = (double)myRaceData[i].Y * scaleY;
                     lineSeriesLaps.Points.Add(new DataPoint(X, Y));
                 }
                 plotModel.Series.Add(lineSeriesLaps);

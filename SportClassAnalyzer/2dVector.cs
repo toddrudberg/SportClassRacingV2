@@ -129,6 +129,7 @@ namespace SportClassAnalyzer
     public class cLatLon
     {
         //20905746.8 feet the earth radius at lac cruces
+        //20,886,381.90 at Colville
         //20925524.9 feet the earth radius average
         private const double EarthRadiusFeet = 20925524.9; // Earth's radius in feet
 

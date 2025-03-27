@@ -285,6 +285,10 @@ namespace SportClassAnalyzer
         public string ImageFile { get; set; }
         public Coordinates UpperLeft { get; set; }
         public Coordinates LowerRight { get; set; }
+        public double OffsetX { get; set; } = 0.0;
+        public double OffsetY { get; set; } = 0.0;
+        public double ScaleX { get; set; } = 1.0;
+        public double ScaleY { get; set; } = 1.0;
     }
 
     public class Coordinates

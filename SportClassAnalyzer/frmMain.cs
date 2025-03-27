@@ -122,6 +122,20 @@ namespace SportClassAnalyzer
             theCourse.ElevationInFeet = 0;//pylons.elevationInFeet; using zero makes the course length match the survey
 
             myCourse = theCourse;
+            
+            // Initialize the form state's image offset and scale values from the course file
+            myFormState.ImageOffsetX = myCourse.CourseImage.OffsetX;
+            myFormState.ImageOffsetY = myCourse.CourseImage.OffsetY;
+            myFormState.ImageScaleX = myCourse.CourseImage.ScaleX;
+            myFormState.ImageScaleY = myCourse.CourseImage.ScaleY;
+            myFormState.Save();
+            
+            // Update the options form with the new values from the course
+            if (optionsForm != null && !optionsForm.IsDisposed)
+            {
+                optionsForm.setValues(myFormState);
+                optionsForm.Refresh();
+            }
 
             gpx raceData = null;
             if (buildFromRaceBox)
@@ -163,6 +177,18 @@ namespace SportClassAnalyzer
                 myCourse.assignTheta();
                 myCourse.assignSegments(myFormState);
 
+                // Apply the image offset and scale values from the form state
+                myCourse.CourseImage.OffsetX = myFormState.ImageOffsetX;
+                myCourse.CourseImage.OffsetY = myFormState.ImageOffsetY;
+                myCourse.CourseImage.ScaleX = myFormState.ImageScaleX;
+                myCourse.CourseImage.ScaleY = myFormState.ImageScaleY;
+                
+                // Ensure the options form is updated with the current values
+                if (optionsForm != null && !optionsForm.IsDisposed)
+                {
+                    optionsForm.setValues(myFormState);
+                }
+
                 myRaceData.assignCartisianCoordinates(myCourse.homePylon());
 
                 myRaceData.calculateSpeedsAndTruncate(100);
@@ -173,7 +199,10 @@ namespace SportClassAnalyzer
                 racePlotModel.CreatePlotModel(this, myFormState, myCourse, myRaceData, myLapCrossings, myStartGateCrossings);
                 stopwatch.Stop();
                 Console.WriteLine($"Elapsed time: {stopwatch.ElapsedMilliseconds} ms".Pastel(Color.Chartreuse));
-
+                
+                // Log the current offset values
+                Console.WriteLine($"Image Offset X: {myCourse.CourseImage.OffsetX}");
+                Console.WriteLine($"Image Offset Y: {myCourse.CourseImage.OffsetY}");
             }
         }
 
@@ -236,20 +265,6 @@ namespace SportClassAnalyzer
             }
         }
 
-        private void openRaceCourseFile(object sender, EventArgs e)
-        {
-            OpenFileDialog openFileDialog1 = new OpenFileDialog();
-            openFileDialog1.Filter = "JSON files|*.json";
-            openFileDialog1.Title = "Select a JSON file";
-            openFileDialog1.ShowDialog();
-            if (openFileDialog1.FileName != "")
-            {
-                clearAllData();
-                myFormState.sCourseFile = openFileDialog1.FileName;
-                myFormState.Save();
-            }
-        }
-
         private void selectRaceCourseFileToolStripMenuItem_Click(object sender, EventArgs e)
         {
             OpenFileDialog openFileDialog1 = new OpenFileDialog();
@@ -259,6 +274,25 @@ namespace SportClassAnalyzer
             if (openFileDialog1.FileName != "")
             {
                 Course dog = Course.LoadCourseFile(openFileDialog1.FileName);
+                myFormState.sCourseFile = openFileDialog1.FileName;
+                myFormState.ImageOffsetX = dog.CourseImage.OffsetX;
+                myFormState.ImageOffsetY = dog.CourseImage.OffsetY;
+                myFormState.ImageScaleX = dog.CourseImage.ScaleX;
+                myFormState.ImageScaleY = dog.CourseImage.ScaleY;
+                //we need to set the formOptions values
+                myFormState.Save();
+                //update the frmOptions values using the newly saved myFormState
+                if (optionsForm == null || optionsForm.IsDisposed)
+                {
+                    optionsForm = new frmOptions(this, myFormState);
+                    optionsForm.Show();
+                }
+                else
+                {
+                    optionsForm.setValues(myFormState);
+                    optionsForm.Refresh();
+                    optionsForm.BringToFront();
+                }
                 dog.assignCartisianCoordinates();
             }
         }
