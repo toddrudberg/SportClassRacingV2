@@ -48,7 +48,8 @@ namespace SportClassAnalyzer
             // Set the scale values in the numeric up/down controls
             this.numScaleX.Value = (decimal)state.ImageScaleX;
             this.numScaleY.Value = (decimal)state.ImageScaleY;
-            this.Text = "Course Options - " + state.sCourseFile;
+            this.Text = "Course Options";
+            this.lblCourseName.Text = Path.GetFileNameWithoutExtension(state.sCourseFile);
         }
 
         private void radioOuterCourse_CheckedChanged(object sender, EventArgs e)

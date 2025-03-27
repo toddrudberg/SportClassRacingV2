@@ -44,6 +44,7 @@
             numScaleX = new NumericUpDown();
             lblScaleY = new Label();
             lblScaleX = new Label();
+            lblCourseName = new Label();
             gpSelectCourse.SuspendLayout();
             gpImageOffset.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)numOffsetY).BeginInit();
@@ -60,9 +61,9 @@
             gpSelectCourse.Controls.Add(radioMiddleCourse);
             gpSelectCourse.Controls.Add(radioOuterCourse);
             gpSelectCourse.Location = new Point(44, 45);
-            gpSelectCourse.Margin = new Padding(5, 5, 5, 5);
+            gpSelectCourse.Margin = new Padding(5);
             gpSelectCourse.Name = "gpSelectCourse";
-            gpSelectCourse.Padding = new Padding(5, 5, 5, 5);
+            gpSelectCourse.Padding = new Padding(5);
             gpSelectCourse.Size = new Size(406, 258);
             gpSelectCourse.TabIndex = 0;
             gpSelectCourse.TabStop = false;
@@ -72,7 +73,7 @@
             // 
             checkShowStartLap.AutoSize = true;
             checkShowStartLap.Location = new Point(32, 200);
-            checkShowStartLap.Margin = new Padding(5, 5, 5, 5);
+            checkShowStartLap.Margin = new Padding(5);
             checkShowStartLap.Name = "checkShowStartLap";
             checkShowStartLap.Size = new Size(203, 36);
             checkShowStartLap.TabIndex = 3;
@@ -84,7 +85,7 @@
             // 
             radioInnerCourse.AutoSize = true;
             radioInnerCourse.Location = new Point(37, 141);
-            radioInnerCourse.Margin = new Padding(5, 5, 5, 5);
+            radioInnerCourse.Margin = new Padding(5);
             radioInnerCourse.Name = "radioInnerCourse";
             radioInnerCourse.Size = new Size(181, 36);
             radioInnerCourse.TabIndex = 2;
@@ -97,7 +98,7 @@
             // 
             radioMiddleCourse.AutoSize = true;
             radioMiddleCourse.Location = new Point(37, 93);
-            radioMiddleCourse.Margin = new Padding(5, 5, 5, 5);
+            radioMiddleCourse.Margin = new Padding(5);
             radioMiddleCourse.Name = "radioMiddleCourse";
             radioMiddleCourse.Size = new Size(201, 36);
             radioMiddleCourse.TabIndex = 1;
@@ -110,7 +111,7 @@
             // 
             radioOuterCourse.AutoSize = true;
             radioOuterCourse.Location = new Point(37, 45);
-            radioOuterCourse.Margin = new Padding(5, 5, 5, 5);
+            radioOuterCourse.Margin = new Padding(5);
             radioOuterCourse.Name = "radioOuterCourse";
             radioOuterCourse.Size = new Size(187, 36);
             radioOuterCourse.TabIndex = 0;
@@ -127,9 +128,9 @@
             gpImageOffset.Controls.Add(lblOffsetY);
             gpImageOffset.Controls.Add(lblOffsetX);
             gpImageOffset.Location = new Point(44, 328);
-            gpImageOffset.Margin = new Padding(5, 5, 5, 5);
+            gpImageOffset.Margin = new Padding(5);
             gpImageOffset.Name = "gpImageOffset";
-            gpImageOffset.Padding = new Padding(5, 5, 5, 5);
+            gpImageOffset.Padding = new Padding(5);
             gpImageOffset.Size = new Size(406, 240);
             gpImageOffset.TabIndex = 1;
             gpImageOffset.TabStop = false;
@@ -138,7 +139,7 @@
             // btnApplyOffset
             // 
             btnApplyOffset.Location = new Point(122, 176);
-            btnApplyOffset.Margin = new Padding(5, 5, 5, 5);
+            btnApplyOffset.Margin = new Padding(5);
             btnApplyOffset.Name = "btnApplyOffset";
             btnApplyOffset.Size = new Size(153, 46);
             btnApplyOffset.TabIndex = 4;
@@ -151,7 +152,7 @@
             numOffsetY.DecimalPlaces = 1;
             numOffsetY.Increment = new decimal(new int[] { 10, 0, 0, 0 });
             numOffsetY.Location = new Point(122, 112);
-            numOffsetY.Margin = new Padding(5, 5, 5, 5);
+            numOffsetY.Margin = new Padding(5);
             numOffsetY.Maximum = new decimal(new int[] { 1000, 0, 0, 0 });
             numOffsetY.Minimum = new decimal(new int[] { 1000, 0, 0, int.MinValue });
             numOffsetY.Name = "numOffsetY";
@@ -163,7 +164,7 @@
             numOffsetX.DecimalPlaces = 1;
             numOffsetX.Increment = new decimal(new int[] { 10, 0, 0, 0 });
             numOffsetX.Location = new Point(122, 48);
-            numOffsetX.Margin = new Padding(5, 5, 5, 5);
+            numOffsetX.Margin = new Padding(5);
             numOffsetX.Maximum = new decimal(new int[] { 1000, 0, 0, 0 });
             numOffsetX.Minimum = new decimal(new int[] { 1000, 0, 0, int.MinValue });
             numOffsetX.Name = "numOffsetX";
@@ -197,9 +198,9 @@
             gpImageScale.Controls.Add(lblScaleY);
             gpImageScale.Controls.Add(lblScaleX);
             gpImageScale.Location = new Point(44, 584);
-            gpImageScale.Margin = new Padding(5, 5, 5, 5);
+            gpImageScale.Margin = new Padding(5);
             gpImageScale.Name = "gpImageScale";
-            gpImageScale.Padding = new Padding(5, 5, 5, 5);
+            gpImageScale.Padding = new Padding(5);
             gpImageScale.Size = new Size(406, 176);
             gpImageScale.TabIndex = 2;
             gpImageScale.TabStop = false;
@@ -210,7 +211,7 @@
             numScaleY.DecimalPlaces = 4;
             numScaleY.Increment = new decimal(new int[] { 1, 0, 0, 65536 });
             numScaleY.Location = new Point(122, 112);
-            numScaleY.Margin = new Padding(5, 5, 5, 5);
+            numScaleY.Margin = new Padding(5);
             numScaleY.Maximum = new decimal(new int[] { 10, 0, 0, 0 });
             numScaleY.Minimum = new decimal(new int[] { 1, 0, 0, 65536 });
             numScaleY.Name = "numScaleY";
@@ -223,7 +224,7 @@
             numScaleX.DecimalPlaces = 4;
             numScaleX.Increment = new decimal(new int[] { 1, 0, 0, 65536 });
             numScaleX.Location = new Point(122, 48);
-            numScaleX.Margin = new Padding(5, 5, 5, 5);
+            numScaleX.Margin = new Padding(5);
             numScaleX.Maximum = new decimal(new int[] { 10, 0, 0, 0 });
             numScaleX.Minimum = new decimal(new int[] { 1, 0, 0, 65536 });
             numScaleX.Name = "numScaleX";
@@ -251,15 +252,25 @@
             lblScaleX.TabIndex = 0;
             lblScaleX.Text = "X:";
             // 
+            // lblCourseName
+            // 
+            lblCourseName.AutoSize = true;
+            lblCourseName.Location = new Point(19, 16);
+            lblCourseName.Name = "lblCourseName";
+            lblCourseName.Size = new Size(69, 32);
+            lblCourseName.TabIndex = 3;
+            lblCourseName.Text = "none";
+            // 
             // frmOptions
             // 
             AutoScaleDimensions = new SizeF(13F, 32F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(488, 784);
+            Controls.Add(lblCourseName);
             Controls.Add(gpImageScale);
             Controls.Add(gpImageOffset);
             Controls.Add(gpSelectCourse);
-            Margin = new Padding(5, 5, 5, 5);
+            Margin = new Padding(5);
             Name = "frmOptions";
             Text = "Options";
             gpSelectCourse.ResumeLayout(false);
@@ -273,6 +284,7 @@
             ((System.ComponentModel.ISupportInitialize)numScaleY).EndInit();
             ((System.ComponentModel.ISupportInitialize)numScaleX).EndInit();
             ResumeLayout(false);
+            PerformLayout();
         }
 
         #endregion
@@ -293,5 +305,6 @@
         private NumericUpDown numScaleX;
         private Label lblScaleY;
         private Label lblScaleX;
+        private Label lblCourseName;
     }
 }
