@@ -1,6 +1,7 @@
 using OxyPlot;
 using OxyPlot.Annotations;
 using OxyPlot.Axes;
+using OxyPlot.Legends;
 using OxyPlot.Series;
 using System.Drawing;
 using System.IO;
@@ -433,6 +434,90 @@ namespace SportClassAnalyzer
                 }
                 plotModel.Series.Add(lineSeriesLaps);
             }
+        }
+
+        public void CreateMultipleRacePlotModel(System.Windows.Forms.Form form, cFormState formState, Course course, List<cRaceData> allRaceData)
+        {
+            // Remove existing plot view
+            if (currentPlotView != null)
+            {
+                form.Controls.Remove(currentPlotView);
+                currentPlotView.Dispose();
+                currentPlotView = null;
+            }
+            
+            // Create a new plot model
+            var plotModel = new PlotModel
+            {
+                Title = "Multiple Race Playback"
+            };
+            
+            // Plot background and pylons
+            cPoint upperLeft, lowerRight;
+            plotBackGroundImage(plotModel, course, out upperLeft, out lowerRight);
+            plotPylons(course, plotModel, formState);
+            
+            // Add a legend to the plot
+            var legend = new Legend
+            {
+                LegendTitle = "Race Data",
+                LegendPosition = LegendPosition.RightTop
+            };
+            plotModel.Legends.Add(legend);
+            
+            // Plot each race with a different color
+            for (int raceIndex = 0; raceIndex < allRaceData.Count; raceIndex++)
+            {
+                OxyColor raceColor = oxyColors[raceIndex % oxyColors.Count];
+                string raceName = $"Race {raceIndex + 1}";
+                plotMultipleRaceData(allRaceData[raceIndex].racePoints, plotModel, course, raceColor, raceName);
+            }
+            
+            // Create and add the plot view
+            int menuBarHeight = 30;
+            currentPlotView = new PlotView
+            {
+                Model = plotModel,
+                Dock = DockStyle.None,
+                Location = new Point(0, menuBarHeight),
+                Size = new Size(form.ClientSize.Width, form.ClientSize.Height - menuBarHeight),
+                Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right
+            };
+            
+            form.Controls.Add(currentPlotView);
+            currentPlotView.BringToFront();
+            currentPlotView.Show();
+            
+            form.PerformLayout();
+            form.Invalidate();
+            form.Update();
+            form.Refresh();
+        }
+        
+        private void plotMultipleRaceData(List<racePoint> racePoints, PlotModel plotModel, Course course, OxyColor color, string raceName)
+        {
+            // Get scale factors
+            double scaleX = course.CourseImage.ScaleX;
+            double scaleY = course.CourseImage.ScaleY;
+            
+            // Create a line series for this race
+            var lineSeries = new LineSeries
+            {
+                Color = color,
+                Title = raceName,
+                StrokeThickness = 2
+            };
+            
+            // Add all points to the line series
+            foreach (var point in racePoints)
+            {
+                double X = point.X * scaleX;
+                double Y = point.Y * scaleY;
+                lineSeries.Points.Add(new DataPoint(X, Y));
+            }
+            
+            // Add the line series to the plot model
+            plotModel.Series.Add(lineSeries);
         }
 
         public string getColorName(OxyColor color)

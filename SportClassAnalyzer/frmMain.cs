@@ -29,6 +29,16 @@ namespace SportClassAnalyzer
         public List<cLapCrossings> myStartGateCrossings = new List<cLapCrossings>();
 
         private bool raceBuilt = false;
+        
+        // Playback related variables
+        private List<cRaceData> playbackRaceData;
+        private Thread playbackThread;
+        private bool isPlaybackRunning = false;
+        private double playbackSpeed = 1.0;
+        private int trailLengthSeconds = 10;
+        private DateTime playbackStartTime;
+        private DateTime simulationTime;
+        private RacePlotModel playbackPlotModel;
 
         #region Console Output
         [DllImport("kernel32.dll")]
@@ -295,6 +305,188 @@ namespace SportClassAnalyzer
                 }
                 dog.assignCartisianCoordinates();
             }
+        }
+
+        private void playbackAllRacesInFolderToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            FolderBrowserDialog folderBrowserDialog = new FolderBrowserDialog();
+            folderBrowserDialog.Description = "Select a folder containing race data files";
+            
+            if (folderBrowserDialog.ShowDialog() == DialogResult.OK)
+            {
+                string folderPath = folderBrowserDialog.SelectedPath;
+                LoadAndPlaybackAllRacesInFolder(folderPath);
+            }
+        }
+
+        private void LoadAndPlaybackAllRacesInFolder(string folderPath)
+        {
+            // Clear existing data
+            clearAllData();
+            
+            // Get all GPX and CSV files in the folder
+            string[] gpxFiles = Directory.GetFiles(folderPath, "*.gpx");
+            string[] csvFiles = Directory.GetFiles(folderPath, "*.csv");
+            
+            if (gpxFiles.Length == 0 && csvFiles.Length == 0)
+            {
+                MessageBox.Show("No race data files found in the selected folder.", "No Files Found", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+            
+            // Create a list to hold all race data
+            List<cRaceData> allRaceData = new List<cRaceData>();
+            
+            // Load GPX files
+            foreach (string gpxFile in gpxFiles)
+            {
+                try
+                {
+                    cRaceData raceDataObj = LoadGpxFile(gpxFile);
+                    if (raceDataObj != null)
+                    {
+                        allRaceData.Add(raceDataObj);
+                        Console.WriteLine($"Loaded race data from {Path.GetFileName(gpxFile)}");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error loading {Path.GetFileName(gpxFile)}: {ex.Message}");
+                }
+            }
+            
+            // Load CSV files (RaceBox format)
+            foreach (string csvFile in csvFiles)
+            {
+                try
+                {
+                    cRaceData raceDataObj = LoadRaceBoxFile(csvFile);
+                    if (raceDataObj != null)
+                    {
+                        allRaceData.Add(raceDataObj);
+                        Console.WriteLine($"Loaded race data from {Path.GetFileName(csvFile)}");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error loading {Path.GetFileName(csvFile)}: {ex.Message}");
+                }
+            }
+            
+            if (allRaceData.Count == 0)
+            {
+                MessageBox.Show("Failed to load any race data files.", "Loading Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+            
+            // Load the course if not already loaded
+            if (myCourse == null || myCourse.Pylons == null)
+            {
+                if (string.IsNullOrEmpty(myFormState.sCourseFile) || !File.Exists(myFormState.sCourseFile))
+                {
+                    MessageBox.Show("Please select a race course file first.", "Course Required", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+                
+                Course theCourse = Course.LoadCourseFile(myFormState.sCourseFile);
+                myCourse = theCourse;
+            }
+            
+            // Process and visualize all race data
+            ProcessAndVisualizeMultipleRaces(allRaceData);
+        }
+
+        private cRaceData LoadGpxFile(string filePath)
+        {
+            XmlSerializer raceSerializer = new XmlSerializer(typeof(gpx));
+            gpx raceData;
+            
+            using (FileStream fs = new FileStream(filePath, FileMode.Open))
+            {
+                raceData = (gpx)raceSerializer.Deserialize(fs);
+            }
+            
+            cRaceData raceDataObj = new cRaceData();
+            raceDataObj.racePoints = raceData.trk.trkseg.ToList();
+            
+            return raceDataObj;
+        }
+        
+        private cRaceData LoadRaceBoxFile(string filePath)
+        {
+            List<cRaceBoxRecord> raceBoxRecords = cRaceBoxParser.ParseCsv(filePath);
+            gpx raceData = cRaceBoxParser.ConvertRaceBoxToGpx(raceBoxRecords);
+            
+            cRaceData raceDataObj = new cRaceData();
+            raceDataObj.racePoints = raceData.trk.trkseg.ToList();
+            
+            return raceDataObj;
+        }
+        
+        private void ProcessAndVisualizeMultipleRaces(List<cRaceData> allRaceData)
+        {
+            // Process course data
+            myCourse.assignCartisianCoordinates(myCourse.ElevationInFeet);
+            myCourse.assignTheta();
+            myCourse.assignSegments(myFormState);
+            
+            // Process each race data set and collect filtered race data
+            List<cRaceData> filteredRaceData = new List<cRaceData>();
+            
+            foreach (cRaceData raceData in allRaceData)
+            {
+                // Assign Cartesian coordinates
+                raceData.assignCartisianCoordinates(myCourse.homePylon());
+                
+                // Calculate speeds
+                raceData.calculateSpeedsAndTruncate(100);
+                
+                // Create separate lap crossing lists for each race
+                List<cLapCrossings> raceLapCrossings = new List<cLapCrossings>();
+                List<cLapCrossings> raceStartGateCrossings = new List<cLapCrossings>();
+                
+                // Detect laps to filter data
+                raceData.detectLaps(myCourse, out raceLapCrossings, out raceStartGateCrossings);
+                
+                // If laps were detected, create a filtered race data object
+                if (raceLapCrossings.Count > 0)
+                {
+                    // Create a new race data object with only the points from start to last lap
+                    cRaceData filteredData = new cRaceData();
+                    
+                    // Determine start and end indices
+                    int startIndex = 0;
+                    int endIndex = raceLapCrossings[raceLapCrossings.Count - 1].dataPoint;
+                    
+                    // If start gate crossings were detected, use the first one as the start
+                    //if (raceStartGateCrossings.Count > 0)
+                    //{
+                    //    startIndex = Math.Max(0, raceStartGateCrossings[0].dataPoint - 5);
+                    //}
+                    
+                    // Extract only the points between start and end
+                    filteredData.racePoints = new List<racePoint>(
+                        raceData.racePoints.GetRange(startIndex, endIndex - startIndex + 1));
+                    
+                    // Add to the filtered list
+                    filteredRaceData.Add(filteredData);
+                    
+                    Console.WriteLine($"Race filtered: {startIndex} to {endIndex} ({filteredData.racePoints.Count} points)");
+                }
+                else
+                {
+                    // If no laps were detected, use the original data
+                    filteredRaceData.Add(raceData);
+                    Console.WriteLine("No laps detected for this race, using all data points");
+                }
+            }
+            
+            // Set flag to indicate race is built
+            raceBuilt = true;
+            
+            // Create a plot model for multiple races using the filtered data
+            RacePlotModel racePlotModel = new RacePlotModel();
+            racePlotModel.CreateMultipleRacePlotModel(this, myFormState, myCourse, filteredRaceData);
         }
     }
 }

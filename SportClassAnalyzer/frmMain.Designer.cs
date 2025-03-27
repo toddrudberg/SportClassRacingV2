@@ -34,6 +34,7 @@ namespace SportClassAnalyzer
             openToolStripMenuItem = new ToolStripMenuItem();
             openRaceBoxFileToolStripMenuItem = new ToolStripMenuItem();
             selectRaceCourseFileToolStripMenuItem = new ToolStripMenuItem();
+            playbackAllRacesInFolderToolStripMenuItem = new ToolStripMenuItem();
             raceOptionsToolStripMenuItem = new ToolStripMenuItem();
             selectCourseToolStripMenuItem = new ToolStripMenuItem();
             toolStripSeparator1 = new ToolStripSeparator();
@@ -53,7 +54,7 @@ namespace SportClassAnalyzer
             // 
             // fileToolStripMenuItem
             // 
-            fileToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { openToolStripMenuItem, openRaceBoxFileToolStripMenuItem, selectRaceCourseFileToolStripMenuItem });
+            fileToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { openToolStripMenuItem, openRaceBoxFileToolStripMenuItem, selectRaceCourseFileToolStripMenuItem, playbackAllRacesInFolderToolStripMenuItem });
             fileToolStripMenuItem.Name = "fileToolStripMenuItem";
             fileToolStripMenuItem.Size = new Size(71, 38);
             fileToolStripMenuItem.Text = "File";
@@ -73,12 +74,19 @@ namespace SportClassAnalyzer
             openRaceBoxFileToolStripMenuItem.Click += openRaceBoxFileToolStripMenuItem_Click;
             // 
             // selectRaceCourseFileToolStripMenuItem
-            // 
+            //
             selectRaceCourseFileToolStripMenuItem.Name = "selectRaceCourseFileToolStripMenuItem";
             selectRaceCourseFileToolStripMenuItem.Size = new Size(393, 44);
             selectRaceCourseFileToolStripMenuItem.Text = "Select Race Course File";
             selectRaceCourseFileToolStripMenuItem.Click += selectRaceCourseFileToolStripMenuItem_Click;
-            // 
+            //
+            // playbackAllRacesInFolderToolStripMenuItem
+            //
+            playbackAllRacesInFolderToolStripMenuItem.Name = "playbackAllRacesInFolderToolStripMenuItem";
+            playbackAllRacesInFolderToolStripMenuItem.Size = new Size(393, 44);
+            playbackAllRacesInFolderToolStripMenuItem.Text = "Playback All Races in Folder";
+            playbackAllRacesInFolderToolStripMenuItem.Click += playbackAllRacesInFolderToolStripMenuItem_Click;
+            //
             // raceOptionsToolStripMenuItem
             // 
             raceOptionsToolStripMenuItem.CheckOnClick = true;
@@ -124,5 +132,6 @@ namespace SportClassAnalyzer
         private ToolStripSeparator toolStripSeparator1;
         private ToolStripMenuItem setPylonFileToolStripMenuItem;
         private ToolStripMenuItem selectRaceCourseFileToolStripMenuItem;
+        private ToolStripMenuItem playbackAllRacesInFolderToolStripMenuItem;
     }
 }
