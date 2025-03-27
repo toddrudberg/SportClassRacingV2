@@ -124,18 +124,18 @@ namespace SportClassAnalyzer
             myCourse = theCourse;
             
             // Initialize the form state's image offset and scale values from the course file
-            myFormState.ImageOffsetX = myCourse.CourseImage.OffsetX;
-            myFormState.ImageOffsetY = myCourse.CourseImage.OffsetY;
-            myFormState.ImageScaleX = myCourse.CourseImage.ScaleX;
-            myFormState.ImageScaleY = myCourse.CourseImage.ScaleY;
-            myFormState.Save();
+            // myFormState.ImageOffsetX = myCourse.CourseImage.OffsetX;
+            // myFormState.ImageOffsetY = myCourse.CourseImage.OffsetY;
+            // myFormState.ImageScaleX = myCourse.CourseImage.ScaleX;
+            // myFormState.ImageScaleY = myCourse.CourseImage.ScaleY;
+            // myFormState.Save();
             
             // Update the options form with the new values from the course
-            if (optionsForm != null && !optionsForm.IsDisposed)
-            {
-                optionsForm.setValues(myFormState);
-                optionsForm.Refresh();
-            }
+            // if (optionsForm != null && !optionsForm.IsDisposed)
+            // {
+            //     optionsForm.setValues(myFormState);
+            //     optionsForm.Refresh();
+            // }
 
             gpx raceData = null;
             if (buildFromRaceBox)
@@ -184,10 +184,10 @@ namespace SportClassAnalyzer
                 myCourse.CourseImage.ScaleY = myFormState.ImageScaleY;
                 
                 // Ensure the options form is updated with the current values
-                if (optionsForm != null && !optionsForm.IsDisposed)
-                {
-                    optionsForm.setValues(myFormState);
-                }
+                //if (optionsForm != null && !optionsForm.IsDisposed)
+                //{
+                //    optionsForm.setValues(myFormState);
+                //}
 
                 myRaceData.assignCartisianCoordinates(myCourse.homePylon());
 
