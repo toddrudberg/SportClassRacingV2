@@ -1,6 +1,6 @@
 using Microsoft.Web.WebView2.Core;
 using OxyPlot.Series;
-using OxyPlot.WindowsForms;
+
 using OxyPlot;
 using System.Runtime.InteropServices;
 using System.Xml.Serialization;

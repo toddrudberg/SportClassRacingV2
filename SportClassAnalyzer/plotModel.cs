@@ -1,4 +1,6 @@
 ﻿using OxyPlot;
+using OxyPlot.SkiaSharp;
+using SkiaSharp;
 using OxyPlot.Annotations;
 using OxyPlot.Axes;
 using OxyPlot.Legends;
@@ -11,10 +13,14 @@ using System.Windows.Forms;
 
 
 
+
 namespace SportClassAnalyzer
 {
     public class RacePlotModel
     {
+
+        private PictureBox _plotBitmapBox;
+
         public class PlotViewWithOverlay : PlotView
         {
             public List<DataPoint> AircraftPositions { get; set; } = new();
@@ -577,6 +583,22 @@ namespace SportClassAnalyzer
             currentPlotView.BringToFront();
             currentPlotView.Show();
 
+            // Render to bitmap
+            Bitmap bmp = RenderPlotToBitmap(plotModel, form.ClientSize.Width, form.ClientSize.Height);
+
+            // Display bitmap in PictureBox
+            _plotBitmapBox = new PictureBox
+            {
+                Image = bmp,
+                SizeMode = PictureBoxSizeMode.Normal,
+                Location = new Point(0, 30),
+                Size = new Size(form.ClientSize.Width, form.ClientSize.Height - 30),
+                Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right
+            };
+
+            form.Controls.Add(_plotBitmapBox);
+            _plotBitmapBox.BringToFront();
+
             // Confirm layout
             form.PerformLayout();
             form.Invalidate();
@@ -644,6 +666,24 @@ namespace SportClassAnalyzer
             form.Update();
             //form.Refresh();
         }
+
+
+
+        public static Bitmap RenderPlotToBitmap(PlotModel model, int width, int height)
+        {
+            var exporter = new PngExporter
+            {
+                Width = width,
+                Height = height,
+                Background = OxyColors.White // Choose your background here
+            };
+
+            return exporter.ExportToBitmap(model);
+        }
+
+
+
+
 
         public void UpdateAircraftPositions(Form form, List<List<racePoint>> visiblePointsPerRacer, Course course)
         {
