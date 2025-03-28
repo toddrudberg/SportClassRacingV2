@@ -487,10 +487,10 @@ namespace SportClassAnalyzer
             // Create a plot model for multiple races using the filtered data
             RacePlotModel racePlotModel = new RacePlotModel();
             racePlotModel.CreateMultipleRacePlotModel(this, myFormState, myCourse, filteredRaceData);
-            PlayBackWithTrailingWindow(filteredRaceData, 10.0);
+            PlayBackWithTrailingWindow(racePlotModel, myCourse, filteredRaceData, 5.0);
         }
 
-        public void PlayBackWithTrailingWindow(List<cRaceData> allRaceData, double playbackSpeed = 1.0)
+        public void PlayBackWithTrailingWindow(RacePlotModel racePlotModel, Course course, List<cRaceData> allRaceData, double playbackSpeed = 1.0)
         {
             System.DateTime earliestTime = System.DateTime.MaxValue;
             System.DateTime longestTime = System.DateTime.MinValue;
@@ -511,9 +511,11 @@ namespace SportClassAnalyzer
             Stopwatch stopwatch = new Stopwatch();
             stopwatch.Start();
 
-            TimeSpan trailingWindow = TimeSpan.FromSeconds(10);
+            TimeSpan trailingWindow = TimeSpan.FromSeconds(1);
             TimeSpan maxDuration = longestTime - startTime;
-
+            
+            Stopwatch cycleTime = new Stopwatch();
+            cycleTime.Start();
             while (true)
             {
                 TimeSpan scaledElapsed = TimeSpan.FromSeconds(stopwatch.Elapsed.TotalSeconds * playbackSpeed) ;
@@ -524,6 +526,7 @@ namespace SportClassAnalyzer
                     break;
 
                 List<int> numPoints = new List<int>();
+                List<List<racePoint>> visiblePerRacer = new List<List<racePoint>>();
                 for (int i = 0; i < allRaceData.Count; i++)
                 {
                     // Get all points within the trailing 10-second window
@@ -534,15 +537,18 @@ namespace SportClassAnalyzer
                         .Where(p => p.time <= playbackTime && p.time >= playbackTime - trailingWindow)
                         .ToList();
                     numPoints.Add(visiblePoints.Count);
+                    visiblePerRacer.Add(visiblePoints);
                 }
 
-                string output = $"Playback Time: {playbackTime:HH:mm:ss.fff} ({scaledElapsed.TotalSeconds:F2}s) TotalPoints: ";
-                foreach (int i in numPoints) {
-                    output += string.Format(" {0}", i);
-                }
-                Console.WriteLine(output);
-
-                Thread.Sleep(100); // Update ~10x per second
+                //string output = $"Playback Time: {playbackTime:HH:mm:ss.fff} ({scaledElapsed.TotalSeconds:F2}s) TotalPoints: ";
+                //foreach (int i in numPoints) {
+                 //   output += string.Format(" {0}", i);
+                //}
+                //Console.WriteLine(output);
+                racePlotModel.UpdateRacerTrails(this, visiblePerRacer, course);
+                Console.WriteLine($"Cycle time: {cycleTime.ElapsedMilliseconds} ms");
+                cycleTime.Restart();
+                Thread.Sleep(10); 
             }
 
             stopwatch.Stop();

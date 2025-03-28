@@ -7,6 +7,7 @@ using System.Drawing;
 using System.IO;
 using System.Collections.Generic;
 using OxyPlot.WindowsForms;
+using System.Windows.Forms;
 
 namespace SportClassAnalyzer
 {
@@ -51,7 +52,7 @@ namespace SportClassAnalyzer
             var plotModel = new PlotModel
             {
                 Title = title,
-//                TitlePadding = 10 // Adjust this value as needed
+                //                TitlePadding = 10 // Adjust this value as needed
             };
             cPoint upperLeft;
             cPoint lowerRight;
@@ -221,13 +222,13 @@ namespace SportClassAnalyzer
             // Apply scale factors to coordinates
             double scaleX = course.CourseImage.ScaleX;
             double scaleY = course.CourseImage.ScaleY;
-            
-            foreach( var pylon in activePylons)
+
+            foreach (var pylon in activePylons)
             {
                 // Scale the coordinates for plotting
                 double scaledX = pylon.X * scaleX;
                 double scaledY = pylon.Y * scaleY;
-                
+
                 // Add the data points to the scatter series
                 scatterSeries.Points.Add(new ScatterPoint(scaledX, scaledY, 5, 5));
                 rubberbandSeries.Points.Add(new DataPoint(scaledX, scaledY));
@@ -259,7 +260,7 @@ namespace SportClassAnalyzer
                     // Scale the coordinates for plotting
                     double scaledX = pylon.X * scaleX;
                     double scaledY = pylon.Y * scaleY;
-                    
+
                     // Add the data points to the scatter series
                     scatterSeries.Points.Add(new ScatterPoint(scaledX, scaledY, 5, 5));
                     rubberbandSeriesStart.Points.Add(new DataPoint(scaledX, scaledY));
@@ -284,7 +285,7 @@ namespace SportClassAnalyzer
                     rubberbandSeriesStart.Points.Add(new DataPoint(scaledHomeX, scaledHomeY));
                 }
             }
-            
+
 
             // Add the scatter series to the plot model
             plotModel.Series.Add(scatterSeries);
@@ -296,7 +297,7 @@ namespace SportClassAnalyzer
             //draw a black line between homePylon and startPylon
             var lineSeries = new LineSeries { Color = OxyColors.Black };
             lineSeries.Points.Add(new DataPoint(scaledHomeX, scaledHomeY));
-            
+
             // Scale the start/finish pylon coordinates
             double scaledStartX = startPylon.X * scaleX;
             double scaledStartY = startPylon.Y * scaleY;
@@ -372,7 +373,7 @@ namespace SportClassAnalyzer
             // Get the scale factors from the course
             double scaleX = course.CourseImage.ScaleX;
             double scaleY = course.CourseImage.ScaleY;
-            
+
             // Create a new instance of PlotForm
             var lineSeries = new LineSeries { Color = OxyColors.Green };
             // Use a different color for each lap
@@ -392,7 +393,7 @@ namespace SportClassAnalyzer
                 // Use a different color for each lap
                 OxyColor lapColor = oxyColors[nLap % oxyColors.Count]; // Cycle through colors if needed
                 Console.WriteLine($"Lap {nLap + 1} is {getColorName(lapColor)}");
-                
+
                 var lineSeriesLaps = new LineSeries { Color = lapColor };
                 // Call JavaScript to start a new lap (reset points for new polyline)
 
@@ -418,7 +419,7 @@ namespace SportClassAnalyzer
                 // Scale the crossing point coordinates
                 double crossingX = lapCrossings[nLap].crossingPoint.X * scaleX;
                 double crossingY = lapCrossings[nLap].crossingPoint.Y * scaleY;
-                ScatterPoint crossingPoint = new (crossingX, crossingY);
+                ScatterPoint crossingPoint = new(crossingX, crossingY);
                 scatterSeries.Points.Add(crossingPoint);
             }
             plotModel.Series.Add(scatterSeries);
@@ -468,19 +469,24 @@ namespace SportClassAnalyzer
 
             _racerTrails = new List<LineSeries>(); // Reset list
 
-            // Create a LineSeries for each racer
+            // First: plot static full races
+            for (int raceIndex = 0; raceIndex < allRaceData.Count; raceIndex++)
+            {
+                OxyColor raceColor = oxyColors[raceIndex % oxyColors.Count];
+                OxyColor fadedColor = OxyColor.FromAColor((int)(.1 * 256), raceColor);
+                string raceName = $"Race {raceIndex + 1}";
+
+                // plotMultipleRaceData likely adds its own LineSeries
+                plotMultipleRaceData(allRaceData[raceIndex].racePoints, plotModel, course, fadedColor, raceName);
+            }
+
+            // Second: create live trails *after*
+            _racerTrails = new List<LineSeries>();
+
             for (int raceIndex = 0; raceIndex < allRaceData.Count; raceIndex++)
             {
                 OxyColor raceColor = oxyColors[raceIndex % oxyColors.Count];
 
-                // Set 50% transparency for static full race
-                OxyColor fadedColor = OxyColor.FromAColor((int)(.25 * 256), raceColor);
-
-                // Plot static full race (includes legend)
-                string raceName = $"Race {raceIndex + 1}";
-                plotMultipleRaceData(allRaceData[raceIndex].racePoints, plotModel, course, fadedColor, raceName);
-
-                // Create live trail overlay (no legend)
                 var trailSeries = new LineSeries
                 {
                     Color = raceColor,
@@ -515,13 +521,13 @@ namespace SportClassAnalyzer
             form.Refresh();
         }
 
-        
+
         private void plotMultipleRaceData(List<racePoint> racePoints, PlotModel plotModel, Course course, OxyColor color, string raceName)
         {
             // Get scale factors
             double scaleX = course.CourseImage.ScaleX;
             double scaleY = course.CourseImage.ScaleY;
-            
+
             // Create a line series for this race
             var lineSeries = new LineSeries
             {
@@ -529,7 +535,7 @@ namespace SportClassAnalyzer
                 Title = raceName,
                 StrokeThickness = 2
             };
-            
+
             // Add all points to the line series
             foreach (var point in racePoints)
             {
@@ -537,10 +543,49 @@ namespace SportClassAnalyzer
                 double Y = point.Y * scaleY;
                 lineSeries.Points.Add(new DataPoint(X, Y));
             }
-            
+
             // Add the line series to the plot model
             plotModel.Series.Add(lineSeries);
         }
+
+        public void UpdateRacerTrails(Form form, List<List<racePoint>> visiblePointsPerRacer, Course course)
+        {
+            List<int> numPoints = new List<int>();
+            for (int i = 0; i < visiblePointsPerRacer.Count; i++)
+            {
+                var points = visiblePointsPerRacer[i];
+                var trail = _racerTrails[i];
+
+                // Optional: clear first if you're only passing visible points each frame
+                trail.Points.Clear();
+
+                
+                foreach (var pt in points)
+                {
+                    var dp = new DataPoint(pt.X * course.CourseImage.ScaleX, pt.Y * course.CourseImage.ScaleY);
+                    trail.Points.Add(dp);
+                }
+
+                //if (trail.Points.Count > 0)
+                //{
+                //    var first = trail.Points[0];
+                //    Console.WriteLine($"Trail[{i}] Example point: {first.X:F2}, {first.Y:F2}");
+                //}
+
+                numPoints.Add(points.Count);
+            }
+
+
+
+            //Console.WriteLine($"Visible points: {string.Join(", ", numPoints)}");
+            currentPlotView.Model.InvalidatePlot(false);
+
+            //form.PerformLayout();
+            //form.Invalidate();
+            form.Update();
+            //form.Refresh();
+        }
+
 
         public string getColorName(OxyColor color)
         {
