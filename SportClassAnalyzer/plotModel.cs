@@ -8,6 +8,8 @@ using System.IO;
 using System.Collections.Generic;
 using OxyPlot.WindowsForms;
 using System.Windows.Forms;
+using System.Linq.Expressions;
+using System.Drawing.Imaging;
 
 
 
@@ -93,6 +95,10 @@ namespace SportClassAnalyzer
         private List<LineSeries> _racerTrails = new List<LineSeries>();
 
         private PlotView currentPlotView;
+        private Bitmap _backgroundBitmap;
+        private PictureBox _plotBitmapBox;
+        private PlotTransform plotTransform;
+        private Bitmap _workingBitmap;
 
 
 
@@ -573,9 +579,37 @@ namespace SportClassAnalyzer
                 Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right
             };
 
-            form.Controls.Add(currentPlotView);
-            currentPlotView.BringToFront();
-            currentPlotView.Show();
+            //form.Controls.Add(currentPlotView);
+            //currentPlotView.BringToFront();
+            //currentPlotView.Show();
+
+            _backgroundBitmap = RenderPlotToBitmap(plotModel, form.ClientSize.Width, form.ClientSize.Height);
+            _workingBitmap = new Bitmap(_backgroundBitmap.Width, _backgroundBitmap.Height);
+            _workingBitmap.SetResolution(_backgroundBitmap.HorizontalResolution, _backgroundBitmap.VerticalResolution);
+
+
+            _plotBitmapBox = new PictureBox
+            {
+                Image = _backgroundBitmap,
+                SizeMode = PictureBoxSizeMode.Normal,
+                Location = new Point(0, 30),
+                Size = new Size(form.ClientSize.Width, form.ClientSize.Height - 30),
+                Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right
+            };
+
+            form.Controls.Add(_plotBitmapBox);
+            _plotBitmapBox.BringToFront();
+            _plotBitmapBox.Show();
+
+            // Get world bounds from axes
+            double xMin = plotModel.DefaultXAxis.ActualMinimum;
+            double xMax = plotModel.DefaultXAxis.ActualMaximum;
+            double yMin = plotModel.DefaultYAxis.ActualMinimum;
+            double yMax = plotModel.DefaultYAxis.ActualMaximum;
+
+            plotTransform = new PlotTransform(xMin, xMax, yMin, yMax, _backgroundBitmap.Width, _backgroundBitmap.Height);
+
+            DrawAircraft(new List<DataPoint> { new DataPoint(500, 0) });
 
             // Confirm layout
             form.PerformLayout();
@@ -610,6 +644,24 @@ namespace SportClassAnalyzer
             plotModel.Series.Add(lineSeries);
         }
 
+        private Bitmap RenderPlotToBitmap(PlotModel model, int width, int height)
+        {
+            var exporter = new OxyPlot.WindowsForms.PngExporter
+            {
+                Width = width,
+                Height = height,
+                // Background property may not exist in older versions
+                // If it gives a compile error, remove it
+            };
+
+            using (var stream = new MemoryStream())
+            {
+                exporter.Export(model, stream);
+                return new Bitmap(stream);
+            }
+        }
+
+
         public void UpdateRacerTrails(Form form, List<List<racePoint>> visiblePointsPerRacer, Course course)
         {
 
@@ -622,22 +674,22 @@ namespace SportClassAnalyzer
                 // Optional: clear first if you're only passing visible points each frame
                 trail.Points.Clear();
 
-                
-                for (int j = 0; j<points.Count; j++ )
+
+                for (int j = 0; j < points.Count; j++)
                 {
                     var pt = points[j];
                     var dp = new DataPoint(pt.X * course.CourseImage.ScaleX, pt.Y * course.CourseImage.ScaleY);
-                    if( j == points.Count - 1)
+                    if (j == points.Count - 1)
                     {
                         aircraftPositions.Add(dp);
                     }
                     trail.Points.Add(dp);
                 }
 
-                
+
 
             }
-            DrawAircraftPositions(aircraftPositions);
+            DrawAircraft(aircraftPositions);
             //currentPlotView.Model.InvalidatePlot(false);
             //form.PerformLayout();
             //form.Invalidate();
@@ -710,6 +762,109 @@ namespace SportClassAnalyzer
                 pv.Invalidate(); // Triggers overlay redraw
             }
         }
+
+
+        public void DrawAircraft(List<DataPoint> aircraftPositions)
+        {
+            if (_backgroundBitmap == null || _plotBitmapBox == null || plotTransform == null || _workingBitmap == null)
+                return;
+
+            try
+            {
+                using (Graphics g = Graphics.FromImage(_workingBitmap))
+                {
+                    g.Clear(Color.Transparent); // Optional if you want alpha to persist
+                    g.DrawImageUnscaled(_backgroundBitmap, 0, 0); // Draw original background
+
+                    foreach (var pt in aircraftPositions)
+                    {
+                        PointF screenPt = plotTransform.Transform(pt.X, pt.Y);
+
+                        if (float.IsNaN(screenPt.X) || float.IsNaN(screenPt.Y))
+                            continue;
+
+                        g.FillEllipse(Brushes.LimeGreen, screenPt.X - 4, screenPt.Y - 4, 8, 8);
+                        break;
+                    }
+                }
+
+                // Just re-assign the shared bitmap
+                _plotBitmapBox.Image = _workingBitmap;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[DrawAircraft] Error: {ex.Message}");
+            }
+        }
+
+
+
+
+        public void DrawAircraft2(List<DataPoint> aircraftPositions)
+        {
+            if (_backgroundBitmap == null || _plotBitmapBox == null || plotTransform == null)
+            {
+                Console.WriteLine("[DrawAircraft] Skipping — bitmap or transform missing.");
+                return;
+            }
+
+            try
+            {
+                // Create a brand-new Bitmap and copy background manually
+                Bitmap updated = new Bitmap(_backgroundBitmap.Width, _backgroundBitmap.Height, PixelFormat.Format32bppArgb);
+
+                using (Graphics g = Graphics.FromImage(updated))
+                {
+                    // Copy the background
+                    g.DrawImage(_backgroundBitmap, new Rectangle(0, 0, _backgroundBitmap.Width, _backgroundBitmap.Height));
+
+                    // Draw aircraft
+                    foreach (var pt in aircraftPositions)
+                    {
+                        PointF screenPt = plotTransform.Transform(pt.X, pt.Y);
+                        if (float.IsNaN(screenPt.X) || float.IsNaN(screenPt.Y)) continue;
+
+                        g.FillEllipse(Brushes.LimeGreen, screenPt.X - 4, screenPt.Y - 4, 8, 8);
+                    }
+                }
+
+                // Swap the image
+                var old = _plotBitmapBox.Image;
+                _plotBitmapBox.Image = updated;
+                old?.Dispose();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[DrawAircraft] Error: {ex.Message}");
+            }
+        }
+
+
+
+        public void DrawAircraftOG(List<DataPoint> aircraftPositions)
+        {
+            if (_backgroundBitmap == null || _plotBitmapBox == null || plotTransform == null)
+                return;
+
+            // Create a copy of the background to draw on
+            Bitmap updated = new Bitmap(_backgroundBitmap);
+            using (Graphics g = Graphics.FromImage(updated))
+            {
+                foreach (var pt in aircraftPositions)
+                {
+                    PointF screenPt = plotTransform.Transform(pt.X, pt.Y);
+                    g.FillEllipse(Brushes.LimeGreen, screenPt.X - 4, screenPt.Y - 4, 8, 8);
+                }
+            }
+
+            // Swap image
+            var old = _plotBitmapBox.Image;
+            _plotBitmapBox.Image = updated;
+            old?.Dispose();
+        }
+
+
+
 
 
 

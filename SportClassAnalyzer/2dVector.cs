@@ -6,6 +6,35 @@ using System.Threading.Tasks;
 
 namespace SportClassAnalyzer
 {
+    /// <summary>
+    /// from racecouse coordinates to the bitmap coordinates
+    /// </summary>
+    public class PlotTransform
+    {
+        private double _xMin, _xMax, _yMin, _yMax;
+        private int _bitmapWidth, _bitmapHeight;
+
+        public PlotTransform(double xMin, double xMax, double yMin, double yMax, int bitmapWidth, int bitmapHeight)
+        {
+            _xMin = xMin;
+            _xMax = xMax;
+            _yMin = yMin;
+            _yMax = yMax;
+            _bitmapWidth = bitmapWidth;
+            _bitmapHeight = bitmapHeight;
+        }
+
+        public PointF Transform(double x, double y)
+        {
+            double normalizedX = (x - _xMin) / (_xMax - _xMin);
+            double normalizedY = (y - _yMin) / (_yMax - _yMin);
+
+            float screenX = (float)(normalizedX * _bitmapWidth);
+            float screenY = (float)((1.0 - normalizedY) * _bitmapHeight); // Flip Y
+
+            return new PointF(screenX, screenY);
+        }
+    }
 
     public class _2dVector
     {
