@@ -81,6 +81,7 @@ namespace SportClassAnalyzer
         #region Constructor and Layout
         public frmMain()
         {
+            this.DoubleBuffered = true;
             InitializeComponent();
             AllocConsole();
             // Set the console to be tall and narrow
@@ -478,8 +479,8 @@ namespace SportClassAnalyzer
             // Create a plot model for multiple races using the filtered data
             RacePlotModel racePlotModel = new RacePlotModel();
             racePlotModel.CreateMultipleRacePlotModel(this, myFormState, myCourse, filteredRaceData);
-            //PlayBackWithTrailingWindow(racePlotModel, myCourse, filteredRaceData, 5.0);
-            PlayBackLoopInBackground(racePlotModel, myCourse, filteredRaceData, 5.0);
+            PlayBackWithTrailingWindow(racePlotModel, myCourse, filteredRaceData, 5.0);
+            //PlayBackLoopInBackground(racePlotModel, myCourse, filteredRaceData, 5.0);
         }
 
         public void PlayBackWithTrailingWindow(RacePlotModel racePlotModel, Course course, List<cRaceData> allRaceData, double playbackSpeed = 1.0)
@@ -531,7 +532,7 @@ namespace SportClassAnalyzer
                     numPoints.Add(visiblePoints.Count);
                     visiblePerRacer.Add(visiblePoints);
                 }
-                //racePlotModel.UpdateRacerTrails(this, visiblePerRacer, course);
+                racePlotModel.UpdateRacerTrails(this, visiblePerRacer, course);
                 racePlotModel.UpdateAircraftPositions(this, visiblePerRacer, course);
                 Console.WriteLine($"Cycle time: {cycleTime.ElapsedMilliseconds} ms");
                 cycleTime.Restart();
@@ -558,6 +559,7 @@ namespace SportClassAnalyzer
             TimeSpan trailingWindow = TimeSpan.FromSeconds(1);
 
             Stopwatch stopwatch = Stopwatch.StartNew();
+            Stopwatch et = Stopwatch.StartNew();
 
             while (true)
             {
@@ -575,9 +577,12 @@ namespace SportClassAnalyzer
 
                 racePlotModel.UpdateAircraftPositionsThreadSafe(visiblePerRacer, course);
 
+                Console.WriteLine($"Refresh Rate: {et.ElapsedMilliseconds}ms");
+                et.Restart();
+
                 Thread.Sleep(16); // ~60 FPS
             }
-
+            
             stopwatch.Stop();
         }
 

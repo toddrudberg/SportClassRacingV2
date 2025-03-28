@@ -30,13 +30,13 @@ namespace SportClassAnalyzer
 
                 if (AircraftPositions == null || AircraftPositions.Count == 0)
                 {
-                    Console.WriteLine("[Paint] No aircraft to draw.");
+                    //Console.WriteLine("[Paint] No aircraft to draw.");
                     return;
                 }
 
                 if (PlotModelRef == null)
                 {
-                    Console.WriteLine("[Paint] No plot model.");
+                    //Console.WriteLine("[Paint] No plot model.");
                     return;
                 }
 
@@ -45,16 +45,16 @@ namespace SportClassAnalyzer
 
                 if (xAxis == null || yAxis == null)
                 {
-                    Console.WriteLine("[Paint] Axes not found.");
+                    //Console.WriteLine("[Paint] Axes not found.");
                     return;
                 }
 
-                Console.WriteLine($"[Paint] Drawing {AircraftPositions.Count} aircraft...");
+                //Console.WriteLine($"[Paint] Drawing {AircraftPositions.Count} aircraft...");
 
                 foreach (var pos in AircraftPositions)
                 {
                     var screenPoint = xAxis.Transform(pos.X, pos.Y, yAxis);
-                    Console.WriteLine($"[Paint] Aircraft at world {pos.X:F2}, {pos.Y:F2} → screen {screenPoint.X:F2}, {screenPoint.Y:F2}");
+                    //Console.WriteLine($"[Paint] Aircraft at world {pos.X:F2}, {pos.Y:F2} → screen {screenPoint.X:F2}, {screenPoint.Y:F2}");
 
                     float sx = (float)screenPoint.X;
                     float sy = (float)screenPoint.Y;
@@ -641,7 +641,7 @@ namespace SportClassAnalyzer
             //currentPlotView.Model.InvalidatePlot(false);
             //form.PerformLayout();
             //form.Invalidate();
-            form.Update();
+            //form.Update();
             //form.Refresh();
         }
 
@@ -669,11 +669,11 @@ namespace SportClassAnalyzer
 
         public void UpdateAircraftPositionsThreadSafe(List<List<racePoint>> visiblePointsPerRacer, Course course)
         {
-            Console.WriteLine($"[ThreadSafe] Called with {visiblePointsPerRacer.Count} racers");
+            //Console.WriteLine($"[ThreadSafe] Called with {visiblePointsPerRacer.Count} racers");
 
             if (currentPlotView is not PlotViewWithOverlay pv)
             {
-                Console.WriteLine("[ThreadSafe] currentPlotView is NOT PlotViewWithOverlay!");
+                //Console.WriteLine("[ThreadSafe] currentPlotView is NOT PlotViewWithOverlay!");
                 return;
             }
 
@@ -688,11 +688,11 @@ namespace SportClassAnalyzer
                 aircraftPositions.Add(dp);
             }
 
-            Console.WriteLine($"[ThreadSafe] About to invoke with {aircraftPositions.Count} aircraft");
+            //Console.WriteLine($"[ThreadSafe] About to invoke with {aircraftPositions.Count} aircraft");
 
             pv.Invoke(() =>
             {
-                Console.WriteLine($"[UI Thread] Setting {aircraftPositions.Count} aircraft");
+                //Console.WriteLine($"[UI Thread] Setting {aircraftPositions.Count} aircraft");
                 pv.AircraftPositions = aircraftPositions;
                 pv.Invalidate();
                 Application.DoEvents();
