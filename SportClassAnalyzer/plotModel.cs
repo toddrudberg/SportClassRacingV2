@@ -33,6 +33,7 @@ namespace SportClassAnalyzer
             { OxyColors.Cyan, "Cyan" },
             { OxyColors.Teal, "Teal" }
         };
+        private List<LineSeries> _racerTrails = new List<LineSeries>();
 
         private PlotView currentPlotView;
         public void CreatePlotModel(System.Windows.Forms.Form form, cFormState formState, Course course, cRaceData raceData, List<cLapCrossings> lapCrossings, List<cLapCrossings> startGateCrossings)
@@ -436,7 +437,7 @@ namespace SportClassAnalyzer
             }
         }
 
-        public void CreateMultipleRacePlotModel(System.Windows.Forms.Form form, cFormState formState, Course course, List<cRaceData> allRaceData)
+        public void CreateMultipleRacePlotModel(Form form, cFormState formState, Course course, List<cRaceData> allRaceData)
         {
             // Remove existing plot view
             if (currentPlotView != null)
@@ -445,34 +446,54 @@ namespace SportClassAnalyzer
                 currentPlotView.Dispose();
                 currentPlotView = null;
             }
-            
-            // Create a new plot model
+
+            // Create new plot model
             var plotModel = new PlotModel
             {
                 Title = "Multiple Race Playback"
             };
-            
+
             // Plot background and pylons
             cPoint upperLeft, lowerRight;
             plotBackGroundImage(plotModel, course, out upperLeft, out lowerRight);
             plotPylons(course, plotModel, formState);
-            
-            // Add a legend to the plot
+
+            // Add a legend
             var legend = new Legend
             {
                 LegendTitle = "Race Data",
                 LegendPosition = LegendPosition.RightTop
             };
             plotModel.Legends.Add(legend);
-            
-            // Plot each race with a different color
+
+            _racerTrails = new List<LineSeries>(); // Reset list
+
+            // Create a LineSeries for each racer
             for (int raceIndex = 0; raceIndex < allRaceData.Count; raceIndex++)
             {
                 OxyColor raceColor = oxyColors[raceIndex % oxyColors.Count];
+
+                // Set 50% transparency for static full race
+                OxyColor fadedColor = OxyColor.FromAColor((int)(.25 * 256), raceColor);
+
+                // Plot static full race (includes legend)
                 string raceName = $"Race {raceIndex + 1}";
-                plotMultipleRaceData(allRaceData[raceIndex].racePoints, plotModel, course, raceColor, raceName);
+                plotMultipleRaceData(allRaceData[raceIndex].racePoints, plotModel, course, fadedColor, raceName);
+
+                // Create live trail overlay (no legend)
+                var trailSeries = new LineSeries
+                {
+                    Color = raceColor,
+                    StrokeThickness = 2,
+                    LineStyle = LineStyle.Solid,
+                    RenderInLegend = false
+                };
+
+                plotModel.Series.Add(trailSeries);
+                _racerTrails.Add(trailSeries);
             }
-            
+
+
             // Create and add the plot view
             int menuBarHeight = 30;
             currentPlotView = new PlotView
@@ -483,16 +504,17 @@ namespace SportClassAnalyzer
                 Size = new Size(form.ClientSize.Width, form.ClientSize.Height - menuBarHeight),
                 Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right
             };
-            
+
             form.Controls.Add(currentPlotView);
             currentPlotView.BringToFront();
             currentPlotView.Show();
-            
+
             form.PerformLayout();
             form.Invalidate();
             form.Update();
             form.Refresh();
         }
+
         
         private void plotMultipleRaceData(List<racePoint> racePoints, PlotModel plotModel, Course course, OxyColor color, string raceName)
         {
