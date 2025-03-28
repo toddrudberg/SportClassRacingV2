@@ -122,10 +122,10 @@ namespace SportClassAnalyzer
 
             int menuBarHeight = 30; // Adjust this height based on your menu bar size
 
-            currentPlotView = new PlotViewWithOverlay
+            currentPlotView = new PlotView
             {
                 Model = plotModel,
-                PlotModelRef = plotModel,
+                //PlotModelRef = plotModel,
                 Dock = DockStyle.None,
                 Location = new Point(0, menuBarHeight),
                 Size = new Size(form.ClientSize.Width, form.ClientSize.Height - menuBarHeight),
