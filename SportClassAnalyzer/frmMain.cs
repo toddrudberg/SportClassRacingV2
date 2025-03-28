@@ -30,15 +30,6 @@ namespace SportClassAnalyzer
 
         private bool raceBuilt = false;
 
-        // Playback related variables
-        private List<cRaceData> playbackRaceData;
-        private Thread playbackThread;
-        private bool isPlaybackRunning = false;
-        private double playbackSpeed = 1.0;
-        private int trailLengthSeconds = 10;
-        private DateTime playbackStartTime;
-        private DateTime simulationTime;
-        private RacePlotModel playbackPlotModel;
 
         #region Console Output
         [DllImport("kernel32.dll")]
@@ -487,7 +478,8 @@ namespace SportClassAnalyzer
             // Create a plot model for multiple races using the filtered data
             RacePlotModel racePlotModel = new RacePlotModel();
             racePlotModel.CreateMultipleRacePlotModel(this, myFormState, myCourse, filteredRaceData);
-            PlayBackWithTrailingWindow(racePlotModel, myCourse, filteredRaceData, 5.0);
+            //PlayBackWithTrailingWindow(racePlotModel, myCourse, filteredRaceData, 5.0);
+            PlayBackLoopInBackground(racePlotModel, myCourse, filteredRaceData, 5.0);
         }
 
         public void PlayBackWithTrailingWindow(RacePlotModel racePlotModel, Course course, List<cRaceData> allRaceData, double playbackSpeed = 1.0)
@@ -539,19 +531,55 @@ namespace SportClassAnalyzer
                     numPoints.Add(visiblePoints.Count);
                     visiblePerRacer.Add(visiblePoints);
                 }
-
-                //string output = $"Playback Time: {playbackTime:HH:mm:ss.fff} ({scaledElapsed.TotalSeconds:F2}s) TotalPoints: ";
-                //foreach (int i in numPoints) {
-                 //   output += string.Format(" {0}", i);
-                //}
-                //Console.WriteLine(output);
-                racePlotModel.UpdateRacerTrails(this, visiblePerRacer, course);
+                //racePlotModel.UpdateRacerTrails(this, visiblePerRacer, course);
+                racePlotModel.UpdateAircraftPositions(this, visiblePerRacer, course);
                 Console.WriteLine($"Cycle time: {cycleTime.ElapsedMilliseconds} ms");
                 cycleTime.Restart();
-                Thread.Sleep(10); 
+                Thread.Sleep(16); 
             }
 
             stopwatch.Stop();
         }
+
+        public void PlayBackLoopInBackground(RacePlotModel racePlotModel, Course course, List<cRaceData> allRaceData, double playbackSpeed = 1.0)
+        {
+            DateTime earliestTime = DateTime.MaxValue;
+            DateTime longestTime = DateTime.MinValue;
+
+            foreach (var raceData in allRaceData)
+            {
+                if (raceData.racePoints.Count == 0) continue;
+                earliestTime = raceData.racePoints[0].time < earliestTime ? raceData.racePoints[0].time : earliestTime;
+                longestTime = raceData.racePoints[^1].time > longestTime ? raceData.racePoints[^1].time : longestTime;
+            }
+
+            DateTime startTime = earliestTime;
+            TimeSpan maxDuration = longestTime - startTime;
+            TimeSpan trailingWindow = TimeSpan.FromSeconds(1);
+
+            Stopwatch stopwatch = Stopwatch.StartNew();
+
+            while (true)
+            {
+                TimeSpan scaledElapsed = TimeSpan.FromSeconds(stopwatch.Elapsed.TotalSeconds * playbackSpeed);
+                if (scaledElapsed > maxDuration)
+                    break;
+
+                DateTime playbackTime = startTime + scaledElapsed;
+
+                var visiblePerRacer = allRaceData
+                    .Select(r => r.racePoints
+                        .Where(p => p.time <= playbackTime && p.time >= playbackTime - trailingWindow)
+                        .ToList())
+                    .ToList();
+
+                racePlotModel.UpdateAircraftPositionsThreadSafe(visiblePerRacer, course);
+
+                Thread.Sleep(16); // ~60 FPS
+            }
+
+            stopwatch.Stop();
+        }
+
     }
 }
