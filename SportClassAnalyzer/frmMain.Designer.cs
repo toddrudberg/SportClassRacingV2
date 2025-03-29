@@ -33,11 +33,11 @@ namespace SportClassAnalyzer
             fileToolStripMenuItem = new ToolStripMenuItem();
             openToolStripMenuItem = new ToolStripMenuItem();
             openRaceBoxFileToolStripMenuItem = new ToolStripMenuItem();
+            selectRaceCourseFileToolStripMenuItem = new ToolStripMenuItem();
+            playbackAllRacesInFolderToolStripMenuItem = new ToolStripMenuItem();
             raceOptionsToolStripMenuItem = new ToolStripMenuItem();
             selectCourseToolStripMenuItem = new ToolStripMenuItem();
             toolStripSeparator1 = new ToolStripSeparator();
-            setRaceCourseFileToolStripMenuItem = new ToolStripMenuItem();
-            testToolStripMenuItem = new ToolStripMenuItem();
             menuStrip1.SuspendLayout();
             SuspendLayout();
             // 
@@ -54,7 +54,7 @@ namespace SportClassAnalyzer
             // 
             // fileToolStripMenuItem
             // 
-            fileToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { openToolStripMenuItem, openRaceBoxFileToolStripMenuItem, setRaceCourseFileToolStripMenuItem, testToolStripMenuItem });
+            fileToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { openToolStripMenuItem, openRaceBoxFileToolStripMenuItem, selectRaceCourseFileToolStripMenuItem, playbackAllRacesInFolderToolStripMenuItem });
             fileToolStripMenuItem.Name = "fileToolStripMenuItem";
             fileToolStripMenuItem.Size = new Size(71, 38);
             fileToolStripMenuItem.Text = "File";
@@ -62,17 +62,31 @@ namespace SportClassAnalyzer
             // openToolStripMenuItem
             // 
             openToolStripMenuItem.Name = "openToolStripMenuItem";
-            openToolStripMenuItem.Size = new Size(359, 44);
+            openToolStripMenuItem.Size = new Size(393, 44);
             openToolStripMenuItem.Text = "Open";
             openToolStripMenuItem.Click += openToolStripMenuItem_Click;
             // 
             // openRaceBoxFileToolStripMenuItem
             // 
             openRaceBoxFileToolStripMenuItem.Name = "openRaceBoxFileToolStripMenuItem";
-            openRaceBoxFileToolStripMenuItem.Size = new Size(359, 44);
+            openRaceBoxFileToolStripMenuItem.Size = new Size(393, 44);
             openRaceBoxFileToolStripMenuItem.Text = "Open RaceBox File";
             openRaceBoxFileToolStripMenuItem.Click += openRaceBoxFileToolStripMenuItem_Click;
             // 
+            // selectRaceCourseFileToolStripMenuItem
+            //
+            selectRaceCourseFileToolStripMenuItem.Name = "selectRaceCourseFileToolStripMenuItem";
+            selectRaceCourseFileToolStripMenuItem.Size = new Size(393, 44);
+            selectRaceCourseFileToolStripMenuItem.Text = "Select Race Course File";
+            selectRaceCourseFileToolStripMenuItem.Click += selectRaceCourseFileToolStripMenuItem_Click;
+            //
+            // playbackAllRacesInFolderToolStripMenuItem
+            //
+            playbackAllRacesInFolderToolStripMenuItem.Name = "playbackAllRacesInFolderToolStripMenuItem";
+            playbackAllRacesInFolderToolStripMenuItem.Size = new Size(393, 44);
+            playbackAllRacesInFolderToolStripMenuItem.Text = "Playback All Races in Folder";
+            playbackAllRacesInFolderToolStripMenuItem.Click += playbackAllRacesInFolderToolStripMenuItem_Click;
+            //
             // raceOptionsToolStripMenuItem
             // 
             raceOptionsToolStripMenuItem.CheckOnClick = true;
@@ -92,19 +106,6 @@ namespace SportClassAnalyzer
             toolStripSeparator1.Name = "toolStripSeparator1";
             toolStripSeparator1.Size = new Size(290, 6);
             // 
-            // setRaceCourseFileToolStripMenuItem
-            // 
-            setRaceCourseFileToolStripMenuItem.Name = "setRaceCourseFileToolStripMenuItem";
-            setRaceCourseFileToolStripMenuItem.Size = new Size(363, 44);
-            setRaceCourseFileToolStripMenuItem.Text = "Set Race Course File";
-            setRaceCourseFileToolStripMenuItem.Click += openRaceCourseFile;
-            // 
-            // testToolStripMenuItem
-            // 
-            testToolStripMenuItem.Name = "testToolStripMenuItem";
-            testToolStripMenuItem.Size = new Size(363, 44);
-            testToolStripMenuItem.Text = "Test";
-            // 
             // frmMain
             // 
             AutoScaleDimensions = new SizeF(13F, 32F);
@@ -112,7 +113,7 @@ namespace SportClassAnalyzer
             ClientSize = new Size(2260, 720);
             Controls.Add(menuStrip1);
             MainMenuStrip = menuStrip1;
-            Margin = new Padding(5, 5, 5, 5);
+            Margin = new Padding(5);
             Name = "frmMain";
             Text = "Race Analyzer";
             menuStrip1.ResumeLayout(false);
@@ -130,7 +131,7 @@ namespace SportClassAnalyzer
         private ToolStripMenuItem selectCourseToolStripMenuItem;
         private ToolStripSeparator toolStripSeparator1;
         private ToolStripMenuItem setPylonFileToolStripMenuItem;
-        private ToolStripMenuItem setRaceCourseFileToolStripMenuItem;
-        private ToolStripMenuItem testToolStripMenuItem;
+        private ToolStripMenuItem selectRaceCourseFileToolStripMenuItem;
+        private ToolStripMenuItem playbackAllRacesInFolderToolStripMenuItem;
     }
 }

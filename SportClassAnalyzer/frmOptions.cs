@@ -40,6 +40,16 @@ namespace SportClassAnalyzer
                     break;
             }
             this.checkShowStartLap.Checked = state.showStartLap;
+            
+            // Set the offset values in the numeric up/down controls
+            this.numOffsetX.Value = (decimal)state.ImageOffsetX;
+            this.numOffsetY.Value = (decimal)state.ImageOffsetY;
+            
+            // Set the scale values in the numeric up/down controls
+            this.numScaleX.Value = (decimal)state.ImageScaleX;
+            this.numScaleY.Value = (decimal)state.ImageScaleY;
+            this.Text = "Course Options";
+            this.lblCourseName.Text = Path.GetFileNameWithoutExtension(state.sCourseFile);
         }
 
         private void radioOuterCourse_CheckedChanged(object sender, EventArgs e)
@@ -68,6 +78,23 @@ namespace SportClassAnalyzer
             myFormState.showStartLap = checkShowStartLap.Checked;
             mainForm.refreshPlot();
             myFormState.Save();
+        }
+
+        private void btnApplyOffset_Click(object sender, EventArgs e)
+        {
+            // Update the form state with the new offset values
+            myFormState.ImageOffsetX = (double)numOffsetX.Value;
+            myFormState.ImageOffsetY = (double)numOffsetY.Value;
+            
+            // Update the form state with the new scale values
+            myFormState.ImageScaleX = (double)numScaleX.Value;
+            myFormState.ImageScaleY = (double)numScaleY.Value;
+            
+            // Save the form state
+            myFormState.Save();
+            
+            // Refresh the plot to apply the new offsets and scales
+            mainForm.refreshPlot();
         }
     }
 }

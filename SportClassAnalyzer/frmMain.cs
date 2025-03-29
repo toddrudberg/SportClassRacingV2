@@ -22,13 +22,14 @@ namespace SportClassAnalyzer
         public cFormState myFormState = new cFormState();
         private frmOptions optionsForm;
 
-        public cPylons myPylons = new cPylons();
+        public Course myCourse = new Course();
         public cRaceData myRaceData = new cRaceData();
 
         public List<cLapCrossings> myLapCrossings = new List<cLapCrossings>();
         public List<cLapCrossings> myStartGateCrossings = new List<cLapCrossings>();
 
         private bool raceBuilt = false;
+
 
         #region Console Output
         [DllImport("kernel32.dll")]
@@ -117,15 +118,25 @@ namespace SportClassAnalyzer
             Stopwatch stopwatch = Stopwatch.StartNew();
             Console.WriteLine("Loading Pylon Data");
             // Load the pylons
-            pylons pylons = null;
-            XmlSerializer serializer = new XmlSerializer(typeof(pylons));
-            using (FileStream fs = new FileStream(myFormState.sPylonFile, FileMode.Open))
-            {
-                pylons = (pylons)serializer.Deserialize(fs);
-            }
-            //write the pylons to a listbox
-            myPylons.pylonWpts = pylons.wpt.ToList();
-            myPylons.elevationInFeet = 0;//pylons.elevationInFeet; using zero makes the course length match the survey
+            Course theCourse = Course.LoadCourseFile(myFormState.sCourseFile);
+
+            theCourse.ElevationInFeet = 0;//pylons.elevationInFeet; using zero makes the course length match the survey
+
+            myCourse = theCourse;
+
+            // Initialize the form state's image offset and scale values from the course file
+            // myFormState.ImageOffsetX = myCourse.CourseImage.OffsetX;
+            // myFormState.ImageOffsetY = myCourse.CourseImage.OffsetY;
+            // myFormState.ImageScaleX = myCourse.CourseImage.ScaleX;
+            // myFormState.ImageScaleY = myCourse.CourseImage.ScaleY;
+            // myFormState.Save();
+
+            // Update the options form with the new values from the course
+            // if (optionsForm != null && !optionsForm.IsDisposed)
+            // {
+            //     optionsForm.setValues(myFormState);
+            //     optionsForm.Refresh();
+            // }
 
             gpx raceData = null;
             if (buildFromRaceBox)
@@ -163,19 +174,36 @@ namespace SportClassAnalyzer
             if (raceBuilt)
             {
                 Stopwatch stopwatch = Stopwatch.StartNew();
-                myPylons.assignCartisianCoordinates(myPylons.elevationInFeet);
-                myPylons.assignSegments(myFormState);
+                myCourse.assignCartisianCoordinates(myCourse.ElevationInFeet);
+                myCourse.assignTheta();
+                myCourse.assignSegments(myFormState);
 
-                myRaceData.assignCartisianCoordinates(myPylons.homePylon());
+                // Apply the image offset and scale values from the form state
+                myCourse.CourseImage.OffsetX = myFormState.ImageOffsetX;
+                myCourse.CourseImage.OffsetY = myFormState.ImageOffsetY;
+                myCourse.CourseImage.ScaleX = myFormState.ImageScaleX;
+                myCourse.CourseImage.ScaleY = myFormState.ImageScaleY;
+
+                // Ensure the options form is updated with the current values
+                //if (optionsForm != null && !optionsForm.IsDisposed)
+                //{
+                //    optionsForm.setValues(myFormState);
+                //}
+
+                myRaceData.assignCartisianCoordinates(myCourse.homePylon());
+
                 myRaceData.calculateSpeedsAndTruncate(100);
-                myRaceData.detectLaps(myPylons, out myLapCrossings, out myStartGateCrossings);
-                myRaceData.checkForCourseCuts(myFormState, myPylons, myLapCrossings, myStartGateCrossings, myRaceData.myLaps);
+                myRaceData.detectLaps(myCourse, out myLapCrossings, out myStartGateCrossings);
+                myRaceData.checkForCourseCuts(myFormState, myCourse, myLapCrossings, myStartGateCrossings, myRaceData.myLaps);
 
                 RacePlotModel racePlotModel = new RacePlotModel();
-                racePlotModel.CreatePlotModel(this, myFormState, myPylons, myRaceData, myLapCrossings, myStartGateCrossings);
+                racePlotModel.CreatePlotModel(this, myFormState, myCourse, myRaceData, myLapCrossings, myStartGateCrossings);
                 stopwatch.Stop();
                 Console.WriteLine($"Elapsed time: {stopwatch.ElapsedMilliseconds} ms".Pastel(Color.Chartreuse));
 
+                // Log the current offset values
+                Console.WriteLine($"Image Offset X: {myCourse.CourseImage.OffsetX}");
+                Console.WriteLine($"Image Offset Y: {myCourse.CourseImage.OffsetY}");
             }
         }
 
@@ -202,7 +230,7 @@ namespace SportClassAnalyzer
 
         public void clearAllData()
         {
-            myPylons = new cPylons();
+            myCourse = new Course();
             myRaceData = new cRaceData();
             myLapCrossings.Clear();
             myStartGateCrossings.Clear();
@@ -233,22 +261,325 @@ namespace SportClassAnalyzer
             {
                 clearAllData();
                 myFormState.sRaceDataFile = openFileDialog1.FileName;
+                myFormState.Save();
                 buildRace(true);
             }
         }
 
-        private void openRaceCourseFile(object sender, EventArgs e)
+        private void selectRaceCourseFileToolStripMenuItem_Click(object sender, EventArgs e)
         {
             OpenFileDialog openFileDialog1 = new OpenFileDialog();
-            openFileDialog1.Filter = "GPX files|*.gpx";
-            openFileDialog1.Title = "Select a GPX file";
+            openFileDialog1.Filter = "JSON files|*.json";
+            openFileDialog1.Title = "Select a JSON file";
             openFileDialog1.ShowDialog();
             if (openFileDialog1.FileName != "")
             {
-                clearAllData();
-                myFormState.sPylonFile = openFileDialog1.FileName;
-                //buildRace();
+                Course dog = Course.LoadCourseFile(openFileDialog1.FileName);
+                myFormState.sCourseFile = openFileDialog1.FileName;
+                myFormState.ImageOffsetX = dog.CourseImage.OffsetX;
+                myFormState.ImageOffsetY = dog.CourseImage.OffsetY;
+                myFormState.ImageScaleX = dog.CourseImage.ScaleX;
+                myFormState.ImageScaleY = dog.CourseImage.ScaleY;
+                //we need to set the formOptions values
+                myFormState.Save();
+                //update the frmOptions values using the newly saved myFormState
+                if (optionsForm == null || optionsForm.IsDisposed)
+                {
+                    optionsForm = new frmOptions(this, myFormState);
+                    optionsForm.Show();
+                }
+                else
+                {
+                    optionsForm.setValues(myFormState);
+                    optionsForm.Refresh();
+                    optionsForm.BringToFront();
+                }
+                dog.assignCartisianCoordinates();
             }
         }
+
+        private void playbackAllRacesInFolderToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            FolderBrowserDialog folderBrowserDialog = new FolderBrowserDialog();
+            folderBrowserDialog.Description = "Select a folder containing race data files";
+
+            if (folderBrowserDialog.ShowDialog() == DialogResult.OK)
+            {
+                string folderPath = folderBrowserDialog.SelectedPath;
+                LoadAndPlaybackAllRacesInFolder(folderPath);
+            }
+        }
+
+        private void LoadAndPlaybackAllRacesInFolder(string folderPath)
+        {
+            // Clear existing data
+            clearAllData();
+
+            // Get all GPX and CSV files in the folder
+            string[] gpxFiles = Directory.GetFiles(folderPath, "*.gpx");
+            string[] csvFiles = Directory.GetFiles(folderPath, "*.csv");
+
+            if (gpxFiles.Length == 0 && csvFiles.Length == 0)
+            {
+                MessageBox.Show("No race data files found in the selected folder.", "No Files Found", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            // Create a list to hold all race data
+            List<cRaceData> allRaceData = new List<cRaceData>();
+
+            // Load GPX files
+            foreach (string gpxFile in gpxFiles)
+            {
+                try
+                {
+                    cRaceData raceDataObj = LoadGpxFile(gpxFile);
+                    if (raceDataObj != null)
+                    {
+                        allRaceData.Add(raceDataObj);
+                        Console.WriteLine($"Loaded race data from {Path.GetFileName(gpxFile)}");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error loading {Path.GetFileName(gpxFile)}: {ex.Message}");
+                }
+            }
+
+            // Load CSV files (RaceBox format)
+            foreach (string csvFile in csvFiles)
+            {
+                try
+                {
+                    cRaceData raceDataObj = LoadRaceBoxFile(csvFile);
+                    if (raceDataObj != null)
+                    {
+                        allRaceData.Add(raceDataObj);
+                        Console.WriteLine($"Loaded race data from {Path.GetFileName(csvFile)}");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error loading {Path.GetFileName(csvFile)}: {ex.Message}");
+                }
+            }
+
+            if (allRaceData.Count == 0)
+            {
+                MessageBox.Show("Failed to load any race data files.", "Loading Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+            // Load the course if not already loaded
+            if (myCourse == null || myCourse.Pylons == null)
+            {
+                if (string.IsNullOrEmpty(myFormState.sCourseFile) || !File.Exists(myFormState.sCourseFile))
+                {
+                    MessageBox.Show("Please select a race course file first.", "Course Required", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+
+                Course theCourse = Course.LoadCourseFile(myFormState.sCourseFile);
+                myCourse = theCourse;
+            }
+
+            // Process and visualize all race data
+            ProcessAndVisualizeMultipleRaces(allRaceData);
+        }
+
+        private cRaceData LoadGpxFile(string filePath)
+        {
+            XmlSerializer raceSerializer = new XmlSerializer(typeof(gpx));
+            gpx raceData;
+
+            using (FileStream fs = new FileStream(filePath, FileMode.Open))
+            {
+                raceData = (gpx)raceSerializer.Deserialize(fs);
+            }
+
+            cRaceData raceDataObj = new cRaceData();
+            raceDataObj.racePoints = raceData.trk.trkseg.ToList();
+
+            return raceDataObj;
+        }
+
+        private cRaceData LoadRaceBoxFile(string filePath)
+        {
+            List<cRaceBoxRecord> raceBoxRecords = cRaceBoxParser.ParseCsv(filePath);
+            gpx raceData = cRaceBoxParser.ConvertRaceBoxToGpx(raceBoxRecords);
+
+            cRaceData raceDataObj = new cRaceData();
+            raceDataObj.racePoints = raceData.trk.trkseg.ToList();
+
+            return raceDataObj;
+        }
+
+        private void ProcessAndVisualizeMultipleRaces(List<cRaceData> allRaceData)
+        {
+            // Process course data
+            myCourse.assignCartisianCoordinates(myCourse.ElevationInFeet);
+            myCourse.assignTheta();
+            myCourse.assignSegments(myFormState);
+
+            // Process each race data set and collect filtered race data
+            List<cRaceData> filteredRaceData = new List<cRaceData>();
+
+            foreach (cRaceData raceData in allRaceData)
+            {
+                // Assign Cartesian coordinates
+                raceData.assignCartisianCoordinates(myCourse.homePylon());
+
+                // Calculate speeds
+                raceData.calculateSpeedsAndTruncate(100);
+
+                // Create separate lap crossing lists for each race
+                List<cLapCrossings> raceLapCrossings = new List<cLapCrossings>();
+                List<cLapCrossings> raceStartGateCrossings = new List<cLapCrossings>();
+
+                // Detect laps to filter data
+                raceData.detectLaps(myCourse, out raceLapCrossings, out raceStartGateCrossings);
+
+                // If laps were detected, create a filtered race data object
+                if (raceLapCrossings.Count > 0)
+                {
+                    // Create a new race data object with only the points from start to last lap
+                    cRaceData filteredData = new cRaceData();
+
+                    // Determine start and end indices
+                    int startIndex = 0;
+                    int endIndex = raceLapCrossings[raceLapCrossings.Count - 1].dataPoint;
+
+                    // If start gate crossings were detected, use the first one as the start
+                    //if (raceStartGateCrossings.Count > 0)
+                    //{
+                    //    startIndex = Math.Max(0, raceStartGateCrossings[0].dataPoint - 5);
+                    //}
+
+                    // Extract only the points between start and end
+                    filteredData.racePoints = new List<racePoint>(
+                        raceData.racePoints.GetRange(startIndex, endIndex - startIndex + 1));
+
+                    // Add to the filtered list
+                    filteredRaceData.Add(filteredData);
+
+                    Console.WriteLine($"Race filtered: {startIndex} to {endIndex} ({filteredData.racePoints.Count} points)");
+                }
+                else
+                {
+                    // If no laps were detected, use the original data
+                    filteredRaceData.Add(raceData);
+                    Console.WriteLine("No laps detected for this race, using all data points");
+                }
+            }
+
+            // Set flag to indicate race is built
+            raceBuilt = true;
+
+            // Create a plot model for multiple races using the filtered data
+            RacePlotModel racePlotModel = new RacePlotModel();
+            racePlotModel.CreateMultipleRacePlotModel(this, myFormState, myCourse, filteredRaceData);
+            PlayBackWithTrailingWindow(racePlotModel, myCourse, filteredRaceData, 5.0);
+            //PlayBackLoopInBackground(racePlotModel, myCourse, filteredRaceData, 5.0);
+        }
+
+        public void PlayBackWithTrailingWindow(RacePlotModel racePlotModel, Course course, List<cRaceData> allRaceData, double playbackSpeed = 1.0)
+        {
+            System.DateTime earliestTime = System.DateTime.MaxValue;
+            System.DateTime longestTime = System.DateTime.MinValue;
+            if (true)
+            {
+                for (int i = 0; i < allRaceData.Count; i++)
+                {
+                    cRaceData raceData = allRaceData[i];
+                    if (raceData.racePoints.Count == 0)
+                        continue;
+
+                    earliestTime = raceData.racePoints[0].time < earliestTime ? raceData.racePoints[0].time : earliestTime;
+                    longestTime = raceData.racePoints[raceData.racePoints.Count - 1].time > longestTime ? raceData.racePoints[raceData.racePoints.Count - 1].time : longestTime;
+                }
+            }
+
+            DateTime startTime = earliestTime;
+            Stopwatch stopwatch = new Stopwatch();
+            stopwatch.Start();
+
+            TimeSpan trailingWindow = TimeSpan.FromSeconds(1);
+            TimeSpan maxDuration = longestTime - startTime;
+            
+            Stopwatch cycleTime = new Stopwatch();
+            cycleTime.Start();
+            while (true)
+            {
+                TimeSpan scaledElapsed = TimeSpan.FromSeconds(stopwatch.Elapsed.TotalSeconds * playbackSpeed) ;
+                DateTime playbackTime = startTime + scaledElapsed;
+
+                // End playback when past the last data point
+                if (scaledElapsed > maxDuration)
+                    break;
+
+                List<int> numPoints = new List<int>();
+                List<List<racePoint>> visiblePerRacer = new List<List<racePoint>>();
+                for (int i = 0; i < allRaceData.Count; i++)
+                {
+                    // Get all points within the trailing 10-second window
+                    cRaceData raceData = allRaceData[i];
+                    List<racePoint> points = raceData.racePoints;
+
+                    var visiblePoints = points
+                        .Where(p => p.time <= playbackTime && p.time >= playbackTime - trailingWindow)
+                        .ToList();
+                    numPoints.Add(visiblePoints.Count);
+                    visiblePerRacer.Add(visiblePoints);
+                }
+                racePlotModel.UpdateRacerTrails(this, visiblePerRacer, course);
+                //racePlotModel.UpdateAircraftPositions(this, visiblePerRacer, course);
+                Console.WriteLine($"Cycle time: {cycleTime.ElapsedMilliseconds} ms");
+                cycleTime.Restart();
+                Thread.Sleep(16); 
+            }
+
+            stopwatch.Stop();
+        }
+
+        public void PlayBackLoopInBackground(RacePlotModel racePlotModel, Course course, List<cRaceData> allRaceData, double playbackSpeed = 1.0)
+        {
+            DateTime earliestTime = DateTime.MaxValue;
+            DateTime longestTime = DateTime.MinValue;
+
+            foreach (var raceData in allRaceData)
+            {
+                if (raceData.racePoints.Count == 0) continue;
+                earliestTime = raceData.racePoints[0].time < earliestTime ? raceData.racePoints[0].time : earliestTime;
+                longestTime = raceData.racePoints[^1].time > longestTime ? raceData.racePoints[^1].time : longestTime;
+            }
+
+            DateTime startTime = earliestTime;
+            TimeSpan maxDuration = longestTime - startTime;
+            TimeSpan trailingWindow = TimeSpan.FromSeconds(1);
+
+            Stopwatch stopwatch = Stopwatch.StartNew();
+
+            while (true)
+            {
+                TimeSpan scaledElapsed = TimeSpan.FromSeconds(stopwatch.Elapsed.TotalSeconds * playbackSpeed);
+                if (scaledElapsed > maxDuration)
+                    break;
+
+                DateTime playbackTime = startTime + scaledElapsed;
+
+                var visiblePerRacer = allRaceData
+                    .Select(r => r.racePoints
+                        .Where(p => p.time <= playbackTime && p.time >= playbackTime - trailingWindow)
+                        .ToList())
+                    .ToList();
+
+                racePlotModel.UpdateAircraftPositionsThreadSafe(visiblePerRacer, course);
+
+                Thread.Sleep(16); // ~60 FPS
+            }
+
+            stopwatch.Stop();
+        }
+
     }
 }

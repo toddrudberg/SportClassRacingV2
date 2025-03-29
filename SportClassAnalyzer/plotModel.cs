@@ -1,16 +1,77 @@
-using OxyPlot;
+﻿using OxyPlot;
 using OxyPlot.Annotations;
 using OxyPlot.Axes;
+using OxyPlot.Legends;
 using OxyPlot.Series;
 using System.Drawing;
 using System.IO;
 using System.Collections.Generic;
 using OxyPlot.WindowsForms;
+using System.Windows.Forms;
+using System.Linq.Expressions;
+using System.Drawing.Imaging;
+using System.Diagnostics;
+
+
 
 namespace SportClassAnalyzer
 {
     public class RacePlotModel
     {
+        public class PlotViewWithOverlay : PlotView
+        {
+            public List<DataPoint> AircraftPositions { get; set; } = new();
+            public PlotModel PlotModelRef { get; set; }
+
+            public PlotViewWithOverlay()
+            {
+                this.DoubleBuffered = true;
+            }
+            protected override void OnPaint(PaintEventArgs e)
+            {
+                base.OnPaint(e); // Always call base first to draw the plot
+
+                if (AircraftPositions == null || AircraftPositions.Count == 0)
+                {
+                    Console.WriteLine("[Paint] No aircraft to draw.");
+                    return;
+                }
+
+                if (PlotModelRef == null)
+                {
+                    Console.WriteLine("[Paint] No plot model.");
+                    return;
+                }
+
+                var xAxis = PlotModelRef.Axes.FirstOrDefault(a => a.Position == AxisPosition.Bottom);
+                var yAxis = PlotModelRef.Axes.FirstOrDefault(a => a.Position == AxisPosition.Left);
+
+                if (xAxis == null || yAxis == null)
+                {
+                    Console.WriteLine("[Paint] Axes not found.");
+                    return;
+                }
+
+                Console.WriteLine($"[Paint] Drawing {AircraftPositions.Count} aircraft...");
+
+                foreach (var pos in AircraftPositions)
+                {
+                    var screenPoint = xAxis.Transform(pos.X, pos.Y, yAxis);
+                    Console.WriteLine($"[Paint] Aircraft at world {pos.X:F2}, {pos.Y:F2} → screen {screenPoint.X:F2}, {screenPoint.Y:F2}");
+
+                    float sx = (float)screenPoint.X;
+                    float sy = (float)screenPoint.Y;
+
+                    // Do NOT invert Y — OxyPlot already handles it
+                    e.Graphics.FillEllipse(Brushes.LimeGreen, sx - 8, sy - 8, 16, 16);
+                }
+            }
+
+
+
+        }
+
+
         public List<OxyColor> oxyColors = new List<OxyColor>
         {
             OxyColors.Blue,
@@ -32,9 +93,19 @@ namespace SportClassAnalyzer
             { OxyColors.Cyan, "Cyan" },
             { OxyColors.Teal, "Teal" }
         };
+        private List<LineSeries> _racerTrails = new List<LineSeries>();
 
         private PlotView currentPlotView;
-        public void CreatePlotModel(System.Windows.Forms.Form form, cFormState formState, cPylons pylons, cRaceData raceData, List<cLapCrossings> lapCrossings, List<cLapCrossings> startGateCrossings)
+        private Bitmap _backgroundBitmap;
+        private PictureBox _plotBitmapBox;
+        private PlotTransform plotTransform;
+        private Bitmap _workingBitmap;
+        // Add this field to your class to track the previous position
+        private PointF? _previousScreenPt = null;//_previousScreenPt
+
+
+
+        public void CreatePlotModel(System.Windows.Forms.Form form, cFormState formState, Course course, cRaceData raceData, List<cLapCrossings> lapCrossings, List<cLapCrossings> startGateCrossings)
         {
             List<racePoint> racePoints = raceData.racePoints;
             string title = Path.GetFileNameWithoutExtension(formState.sRaceDataFile);
@@ -49,45 +120,49 @@ namespace SportClassAnalyzer
             var plotModel = new PlotModel
             {
                 Title = title,
-//                TitlePadding = 10 // Adjust this value as needed
+                //                TitlePadding = 10 // Adjust this value as needed
             };
             cPoint upperLeft;
             cPoint lowerRight;
-            plotBackGroundImage(plotModel, pylons, out upperLeft, out lowerRight);
-            plotPylons(pylons, plotModel, formState);
-            plotRaceData(racePoints, lapCrossings, startGateCrossings, plotModel);
-            plotLapSummary(raceData.myLaps, plotModel, upperLeft, lowerRight,pylons.segments.Sum());
+            plotBackGroundImage(plotModel, course, out upperLeft, out lowerRight);
+            plotPylons(course, plotModel, formState);
+            plotRaceData(racePoints, lapCrossings, startGateCrossings, plotModel, course);
+            plotLapSummary(raceData.myLaps, plotModel, upperLeft, lowerRight, course.segments.Sum());
 
             int menuBarHeight = 30; // Adjust this height based on your menu bar size
 
             currentPlotView = new PlotView
             {
                 Model = plotModel,
-                Dock = DockStyle.None, // Disable fill to allow for manual positioning
-                Location = new Point(0, menuBarHeight), // Start right below the menu bar
-                Size = new Size(form.ClientSize.Width, form.ClientSize.Height - menuBarHeight), // Adjust height to fit below the menu bar
-                Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right // Enable resizing with form
+                //PlotModelRef = plotModel,
+                Dock = DockStyle.None,
+                Location = new Point(0, menuBarHeight),
+                Size = new Size(form.ClientSize.Width, form.ClientSize.Height - menuBarHeight),
+                Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right
             };
 
-            // Add PlotView and force it to display
             form.Controls.Add(currentPlotView);
-            currentPlotView.BringToFront();
-            currentPlotView.Show();
 
             // Confirm Layout and Display
             form.PerformLayout();
             form.Invalidate();
             form.Update();
             form.Refresh();
+
+
+            DataPoint dp = new DataPoint(0, 0);
+            List<DataPoint> aircraftPositions = new List<DataPoint>();
+            aircraftPositions.Add(dp);
+            aircraftPositions.Add(dp);
+            //DrawAircraftPositions(aircraftPositions);
         }
 
-        private void plotBackGroundImage(PlotModel plotModel, cPylons pylons, out cPoint upperLeft, out cPoint lowerRight)
+        private void plotBackGroundImage(PlotModel plotModel, Course course, out cPoint upperLeft, out cPoint lowerRight)
         {
             upperLeft = new cPoint(0, 0);
             lowerRight = new cPoint(0, 0);
             // Load your image
-            //var imagePath = @"C:\LocalDev\SportClassRacingV2\LasCrucesMap.PNG"; // Path to the Google Earth image
-            var imagePath = @"C:\LocalDev\SportClassRacingV2\ColvilleRaceCourse.png"; // Path to the Google Earth image
+            var imagePath = course.CourseImage.ImageFile;
             byte[] imageBytes;
 
             using (var bitmap = (Bitmap)Image.FromFile(imagePath))
@@ -102,32 +177,25 @@ namespace SportClassAnalyzer
             // Create an OxyImage from the byte array
             var oxyImage = new OxyImage(imageBytes);
 
-            // Define coordinates for scaling (latitude and longitude)
-            //double upperLeftLat = 32.318633;  // Upper-left latitude
-            //double upperLeftLon = -106.961483; // Upper-left longitude
-            //double lowerRightLat = 32.278689;  // Lower-right latitude
-            //double lowerRightLon = -106.874525; // Lower-right longitude
-
-            // Define coordinates for scaling (latitude and longitude)
-            double upperLeftLat = 48.560188;  // Upper-left latitude
-            double upperLeftLon = -117.920058; // Upper-left longitude
-            double lowerRightLat = 48.522863;  // Lower-right latitude
-            double lowerRightLon = -117.824994; // Lower-right longitude
-
-            var homePylon = pylons.homePylon();
+            var homePylon = course.homePylon();
 
             // Calculate Cartesian coordinates for upper-left corner
-            double distance = cLatLon.HaversineDistance(homePylon.lat, homePylon.lon, upperLeftLat, upperLeftLon, pylons.elevationInFeet);
-            double bearing = cLatLon.CalculateBearing(homePylon.lat, homePylon.lon, upperLeftLat, upperLeftLon);
-            double upperLeftX = distance * Math.Sin(bearing * Math.PI / 180); // X-axis as east-west
-            double upperLeftY = distance * Math.Cos(bearing * Math.PI / 180); // Y-axis as north-south
+            double distance = cLatLon.HaversineDistance(homePylon.Latitude, homePylon.Longitude, course.CourseImage.UpperLeft.Latitude, course.CourseImage.UpperLeft.Longitude, course.ElevationInFeet);
+            double bearing = cLatLon.CalculateBearing(homePylon.Latitude, homePylon.Longitude, course.CourseImage.UpperLeft.Latitude, course.CourseImage.UpperLeft.Longitude);
+            double upperLeftX = distance * Math.Sin(bearing * Math.PI / 180) + course.CourseImage.OffsetX; // X-axis as east-west with offset
+            double upperLeftY = distance * Math.Cos(bearing * Math.PI / 180) + course.CourseImage.OffsetY; // Y-axis as north-south with offset
 
             // Calculate Cartesian coordinates for lower-right corner
-            distance = cLatLon.HaversineDistance(homePylon.lat, homePylon.lon, lowerRightLat, lowerRightLon, pylons.elevationInFeet);
-            bearing = cLatLon.CalculateBearing(homePylon.lat, homePylon.lon, lowerRightLat, lowerRightLon);
-            double lowerRightX = distance * Math.Sin(bearing * Math.PI / 180); // X-axis as east-west
-            double lowerRightY = distance * Math.Cos(bearing * Math.PI / 180); // Y-axis as north-south
+            distance = cLatLon.HaversineDistance(homePylon.Latitude, homePylon.Longitude, course.CourseImage.LowerRight.Latitude, course.CourseImage.LowerRight.Longitude, course.ElevationInFeet);
+            bearing = cLatLon.CalculateBearing(homePylon.Latitude, homePylon.Longitude, course.CourseImage.LowerRight.Latitude, course.CourseImage.LowerRight.Longitude);
+            double lowerRightX = distance * Math.Sin(bearing * Math.PI / 180) + course.CourseImage.OffsetX; // X-axis as east-west with offset
+            double lowerRightY = distance * Math.Cos(bearing * Math.PI / 180) + course.CourseImage.OffsetY; // Y-axis as north-south with offset
 
+            Console.WriteLine($"Upper Left: {upperLeftX}, {upperLeftY}");
+            Console.WriteLine($"Lower Right: {lowerRightX}, {lowerRightY}");
+
+            Console.WriteLine($"Image Offset X: {course.CourseImage.OffsetX}");
+            Console.WriteLine($"Image Offset Y: {course.CourseImage.OffsetY}");
 
             // Set padding to add a little extra space around the edges
             double padding = 5;
@@ -196,7 +264,7 @@ namespace SportClassAnalyzer
             plotModel.Annotations.Add(imageAnnotation);
         }
 
-        private void plotPylons(cPylons pylons, PlotModel plotModel, cFormState formState)
+        private void plotPylons(Course course, PlotModel plotModel, cFormState formState)
         {
             // Create a scatter series
             var scatterSeries = new ScatterSeries
@@ -207,33 +275,41 @@ namespace SportClassAnalyzer
             };
             var rubberbandSeries = new LineSeries { Color = OxyColors.Black };
 
-            var activePylons = pylons.outerCoursePylons();
-            List<pylonWpt> startPylons = new List<pylonWpt>();
-            startPylons = pylons.startPylons(formState.courseType, true);
+            var activePylons = course.outerCoursePylons();
+            List<Waypoint> startPylons = new List<Waypoint>();
+            startPylons = course.startPylons(formState.courseType, true);
 
             switch (formState.courseType)
             {
                 case cFormState.CourseType.Inner:
-                    activePylons = pylons.innerCoursePylons();
+                    activePylons = course.innerCoursePylons();
                     break;
                 case cFormState.CourseType.Outer:
-                    activePylons = pylons.outerCoursePylons();
+                    activePylons = course.outerCoursePylons();
                     break;
                 case cFormState.CourseType.Middle:
-                    activePylons = pylons.middleCoursePylons();
+                    activePylons = course.middleCoursePylons();
                     break;
             }
 
-            foreach( var pylon in activePylons)
+            // Apply scale factors to coordinates
+            double scaleX = course.CourseImage.ScaleX;
+            double scaleY = course.CourseImage.ScaleY;
+
+            foreach (var pylon in activePylons)
             {
+                // Scale the coordinates for plotting
+                double scaledX = pylon.X * scaleX;
+                double scaledY = pylon.Y * scaleY;
+
                 // Add the data points to the scatter series
-                scatterSeries.Points.Add(new ScatterPoint((double)pylon.X, (double)pylon.Y, 5, 5));
-                rubberbandSeries.Points.Add(new DataPoint(pylon.X, pylon.Y));
+                scatterSeries.Points.Add(new ScatterPoint(scaledX, scaledY, 5, 5));
+                rubberbandSeries.Points.Add(new DataPoint(scaledX, scaledY));
 
                 var textAnnotation = new TextAnnotation
                 {
-                    Text = pylon.name, // Assuming each pylon has a Name property
-                    TextPosition = new DataPoint(pylon.X, pylon.Y),
+                    Text = pylon.Name, // Assuming each pylon has a Name property
+                    TextPosition = new DataPoint(scaledX, scaledY),
                     TextColor = OxyColors.Black,
                     FontWeight = FontWeights.Bold,
                     FontSize = 12, // Adjust font size as needed
@@ -243,24 +319,31 @@ namespace SportClassAnalyzer
                 // Add the annotation to the plot model
                 plotModel.Annotations.Add(textAnnotation);
             }
-            var homePylon = pylons.homePylonPoint();
-            rubberbandSeries.Points.Add(new DataPoint(homePylon.X, homePylon.Y));
+            var homePylon = course.homePylonPoint();
+            // Scale the home pylon coordinates
+            double scaledHomeX = homePylon.X * scaleX;
+            double scaledHomeY = homePylon.Y * scaleY;
+            rubberbandSeries.Points.Add(new DataPoint(scaledHomeX, scaledHomeY));
 
             var rubberbandSeriesStart = new LineSeries { Color = OxyColors.Black };
             if (formState.showStartLap && !formState.courseType.Equals(cFormState.CourseType.Outer))
             {
                 foreach (var pylon in startPylons)
                 {
-                    // Add the data points to the scatter series
-                    scatterSeries.Points.Add(new ScatterPoint((double)pylon.X, (double)pylon.Y, 5, 5));
-                    rubberbandSeriesStart.Points.Add(new DataPoint(pylon.X, pylon.Y));
+                    // Scale the coordinates for plotting
+                    double scaledX = pylon.X * scaleX;
+                    double scaledY = pylon.Y * scaleY;
 
-                    if (pylon.name != "")
+                    // Add the data points to the scatter series
+                    scatterSeries.Points.Add(new ScatterPoint(scaledX, scaledY, 5, 5));
+                    rubberbandSeriesStart.Points.Add(new DataPoint(scaledX, scaledY));
+
+                    if (pylon.Name != "")
                     {
                         var textAnnotation = new TextAnnotation
                         {
-                            Text = pylon.name, // Assuming each pylon has a Name property
-                            TextPosition = new DataPoint(pylon.X, pylon.Y),
+                            Text = pylon.Name, // Assuming each pylon has a Name property
+                            TextPosition = new DataPoint(scaledX, scaledY),
                             TextColor = OxyColors.Black,
                             FontWeight = FontWeights.Bold,
                             FontSize = 12, // Adjust font size as needed
@@ -272,22 +355,26 @@ namespace SportClassAnalyzer
                 }
                 if (formState.courseType == cFormState.CourseType.Inner)
                 {
-                    rubberbandSeriesStart.Points.Add(new DataPoint(homePylon.X, homePylon.Y));
+                    rubberbandSeriesStart.Points.Add(new DataPoint(scaledHomeX, scaledHomeY));
                 }
             }
-            
+
 
             // Add the scatter series to the plot model
             plotModel.Series.Add(scatterSeries);
             plotModel.Series.Add(rubberbandSeries);
             plotModel.Series.Add(rubberbandSeriesStart);
 
-            var startPylon = pylons.startFinishPylon();
+            var startPylon = course.startFinishPylon();
 
             //draw a black line between homePylon and startPylon
             var lineSeries = new LineSeries { Color = OxyColors.Black };
-            lineSeries.Points.Add(new DataPoint((double)homePylon.X, (double)homePylon.Y));
-            lineSeries.Points.Add(new DataPoint((double)startPylon.X, (double)startPylon.Y));
+            lineSeries.Points.Add(new DataPoint(scaledHomeX, scaledHomeY));
+
+            // Scale the start/finish pylon coordinates
+            double scaledStartX = startPylon.X * scaleX;
+            double scaledStartY = startPylon.Y * scaleY;
+            lineSeries.Points.Add(new DataPoint(scaledStartX, scaledStartY));
             plotModel.Series.Add(lineSeries);
 
 
@@ -354,16 +441,20 @@ namespace SportClassAnalyzer
             }
         }
 
-        private void plotRaceData(List<racePoint> myRaceData, List<cLapCrossings> lapCrossings, List<cLapCrossings> startGateCrossings, PlotModel plotModel)
+        private void plotRaceData(List<racePoint> myRaceData, List<cLapCrossings> lapCrossings, List<cLapCrossings> startGateCrossings, PlotModel plotModel, Course course)
         {
-            // Create a new instance of PlotForm
+            // Get the scale factors from the course
+            double scaleX = course.CourseImage.ScaleX;
+            double scaleY = course.CourseImage.ScaleY;
 
+            // Create a new instance of PlotForm
             var lineSeries = new LineSeries { Color = OxyColors.Green };
             // Use a different color for each lap
             for (int i = 0; i < lapCrossings[0].dataPoint; i++)
             {
-                double X = myRaceData[i].X;
-                double Y = myRaceData[i].Y;
+                // Scale the coordinates for plotting
+                double X = myRaceData[i].X * scaleX;
+                double Y = myRaceData[i].Y * scaleY;
                 // Add the data points to a line series
                 lineSeries.Points.Add(new DataPoint(X, Y));
             }
@@ -375,15 +466,15 @@ namespace SportClassAnalyzer
                 // Use a different color for each lap
                 OxyColor lapColor = oxyColors[nLap % oxyColors.Count]; // Cycle through colors if needed
                 Console.WriteLine($"Lap {nLap + 1} is {getColorName(lapColor)}");
-                
+
                 var lineSeriesLaps = new LineSeries { Color = lapColor };
                 // Call JavaScript to start a new lap (reset points for new polyline)
 
                 for (int i = lapCrossings[nLap].dataPoint; i < lapCrossings[nLap + 1].dataPoint; i++)
                 {
-                    // Convert latitude and longitude from decimal to double
-                    double X = (double)myRaceData[i].X;
-                    double Y = (double)myRaceData[i].Y;
+                    // Scale the coordinates for plotting
+                    double X = (double)myRaceData[i].X * scaleX;
+                    double Y = (double)myRaceData[i].Y * scaleY;
                     lineSeriesLaps.Points.Add(new DataPoint(X, Y));
                 }
                 plotModel.Series.Add(lineSeriesLaps);
@@ -398,7 +489,10 @@ namespace SportClassAnalyzer
 
             for (int nLap = 0; nLap < lapCrossings.Count - 1; nLap++)
             {
-                ScatterPoint crossingPoint = new (lapCrossings[nLap].crossingPoint.X, lapCrossings[nLap].crossingPoint.Y);
+                // Scale the crossing point coordinates
+                double crossingX = lapCrossings[nLap].crossingPoint.X * scaleX;
+                double crossingY = lapCrossings[nLap].crossingPoint.Y * scaleY;
+                ScatterPoint crossingPoint = new(crossingX, crossingY);
                 scatterSeries.Points.Add(crossingPoint);
             }
             plotModel.Series.Add(scatterSeries);
@@ -408,14 +502,377 @@ namespace SportClassAnalyzer
                 var lineSeriesLaps = new LineSeries { Color = OxyColors.Blue };
                 for (int i = 0; i < myRaceData.Count; i++)
                 {
-                    // Convert latitude and longitude from decimal to double
-                    double X = (double)myRaceData[i].X;
-                    double Y = (double)myRaceData[i].Y;
+                    // Scale the coordinates for plotting
+                    double X = (double)myRaceData[i].X * scaleX;
+                    double Y = (double)myRaceData[i].Y * scaleY;
                     lineSeriesLaps.Points.Add(new DataPoint(X, Y));
                 }
                 plotModel.Series.Add(lineSeriesLaps);
             }
         }
+
+        public void CreateMultipleRacePlotModel(Form form, cFormState formState, Course course, List<cRaceData> allRaceData)
+        {
+            // Remove existing plot view
+            if (currentPlotView != null)
+            {
+                form.Controls.Remove(currentPlotView);
+                currentPlotView.Dispose();
+                currentPlotView = null;
+            }
+
+            // Create new plot model
+            var plotModel = new PlotModel
+            {
+                Title = "Multiple Race Playback"
+            };
+
+            // Plot background and pylons
+            cPoint upperLeft, lowerRight;
+            plotBackGroundImage(plotModel, course, out upperLeft, out lowerRight);
+            plotPylons(course, plotModel, formState);
+
+            // Add a legend
+            var legend = new Legend
+            {
+                LegendTitle = "Race Data",
+                LegendPosition = LegendPosition.RightTop
+            };
+            plotModel.Legends.Add(legend);
+
+            _racerTrails = new List<LineSeries>();
+
+            // First: plot static full races
+            for (int raceIndex = 0; raceIndex < allRaceData.Count; raceIndex++)
+            {
+                OxyColor raceColor = oxyColors[raceIndex % oxyColors.Count];
+                OxyColor fadedColor = OxyColor.FromAColor((int)(0.1 * 256), raceColor); // 10% opacity
+                string raceName = $"Race {raceIndex + 1}";
+
+                plotMultipleRaceData(allRaceData[raceIndex].racePoints, plotModel, course, fadedColor, raceName);
+            }
+
+            // Second: create live trails *after*
+            for (int raceIndex = 0; raceIndex < allRaceData.Count; raceIndex++)
+            {
+                OxyColor raceColor = oxyColors[raceIndex % oxyColors.Count];
+
+                var trailSeries = new LineSeries
+                {
+                    Color = raceColor,
+                    StrokeThickness = 2,
+                    LineStyle = LineStyle.Solid,
+                    RenderInLegend = false
+                };
+
+                plotModel.Series.Add(trailSeries);
+                _racerTrails.Add(trailSeries);
+            }
+
+            // Create and add the enhanced plot view
+            int menuBarHeight = 30;
+
+            currentPlotView = new PlotViewWithOverlay
+            {
+                Model = plotModel,
+                PlotModelRef = plotModel,
+                Dock = DockStyle.None,
+                Location = new Point(0, menuBarHeight),
+                Size = new Size(form.ClientSize.Width, form.ClientSize.Height - menuBarHeight),
+                Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right
+            };
+
+            //form.Controls.Add(currentPlotView);
+            //currentPlotView.BringToFront();
+            //currentPlotView.Show();
+
+            _backgroundBitmap = RenderPlotToBitmap(plotModel, form.ClientSize.Width, form.ClientSize.Height);
+            _workingBitmap = new Bitmap(_backgroundBitmap.Width, _backgroundBitmap.Height);
+            _workingBitmap.SetResolution(_backgroundBitmap.HorizontalResolution, _backgroundBitmap.VerticalResolution);
+
+
+            _plotBitmapBox = new PictureBox
+            {
+                Image = _backgroundBitmap,
+                SizeMode = PictureBoxSizeMode.Normal,
+                Location = new Point(0, 30),
+                Size = new Size(form.ClientSize.Width, form.ClientSize.Height - 30),
+                Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right
+            };
+
+            form.Controls.Add(_plotBitmapBox);
+            _plotBitmapBox.BringToFront();
+            _plotBitmapBox.Show();
+
+            // Get world bounds from axes
+            double xMin = plotModel.DefaultXAxis.ActualMinimum;
+            double xMax = plotModel.DefaultXAxis.ActualMaximum;
+            double yMin = plotModel.DefaultYAxis.ActualMinimum;
+            double yMax = plotModel.DefaultYAxis.ActualMaximum;
+
+            plotTransform = new PlotTransform(xMin, xMax, yMin, yMax, _backgroundBitmap.Width, _backgroundBitmap.Height);
+
+            DrawAircraft(new List<DataPoint> { new DataPoint(500, 0) });
+
+            // Confirm layout
+            form.PerformLayout();
+            form.Invalidate();
+            form.Update();
+            form.Refresh();
+        }
+
+        private void plotMultipleRaceData(List<racePoint> racePoints, PlotModel plotModel, Course course, OxyColor color, string raceName)
+        {
+            // Get scale factors
+            double scaleX = course.CourseImage.ScaleX;
+            double scaleY = course.CourseImage.ScaleY;
+
+            // Create a line series for this race
+            var lineSeries = new LineSeries
+            {
+                Color = color,
+                Title = raceName,
+                StrokeThickness = 2
+            };
+
+            // Add all points to the line series
+            foreach (var point in racePoints)
+            {
+                double X = point.X * scaleX;
+                double Y = point.Y * scaleY;
+                lineSeries.Points.Add(new DataPoint(X, Y));
+            }
+
+            // Add the line series to the plot model
+            plotModel.Series.Add(lineSeries);
+        }
+
+        private Bitmap RenderPlotToBitmap(PlotModel model, int width, int height)
+        {
+            var exporter = new OxyPlot.WindowsForms.PngExporter
+            {
+                Width = width,
+                Height = height,
+                // Background property may not exist in older versions
+                // If it gives a compile error, remove it
+            };
+
+            using (var stream = new MemoryStream())
+            {
+                exporter.Export(model, stream);
+                return new Bitmap(stream);
+            }
+        }
+
+
+        public void UpdateRacerTrails(Form form, List<List<racePoint>> visiblePointsPerRacer, Course course)
+        {
+
+            List<DataPoint> aircraftPositions = new List<DataPoint>();
+            for (int i = 0; i < visiblePointsPerRacer.Count; i++)
+            {
+                var points = visiblePointsPerRacer[i];
+                var trail = _racerTrails[i];
+
+                // Optional: clear first if you're only passing visible points each frame
+                trail.Points.Clear();
+
+
+                for (int j = 0; j < points.Count; j++)
+                {
+                    var pt = points[j];
+                    var dp = new DataPoint(pt.X * course.CourseImage.ScaleX, pt.Y * course.CourseImage.ScaleY);
+                    if (j == points.Count - 1)
+                    {
+                        aircraftPositions.Add(dp);
+                    }
+                    trail.Points.Add(dp);
+                }
+
+
+
+            }
+            DrawAircraft(aircraftPositions);
+            //currentPlotView.Model.InvalidatePlot(false);
+            //form.PerformLayout();
+            //form.Invalidate();
+            form.Update();
+            //form.Refresh();
+        }
+
+        public void UpdateAircraftPositions(Form form, List<List<racePoint>> visiblePointsPerRacer, Course course)
+        {
+            if (currentPlotView is not PlotViewWithOverlay pv)
+                return;
+
+            List<DataPoint> aircraftPositions = new List<DataPoint>();
+
+            foreach (var points in visiblePointsPerRacer)
+            {
+                if (points.Count == 0)
+                    continue;
+
+                var pt = points.Last(); // Get latest
+                var dp = new DataPoint(pt.X * course.CourseImage.ScaleX, pt.Y * course.CourseImage.ScaleY);
+                aircraftPositions.Add(dp);
+            }
+
+            pv.AircraftPositions = aircraftPositions;
+            pv.Invalidate(); // Fast, localized redraw
+            form.Update();
+        }
+
+        public void UpdateAircraftPositionsThreadSafe(List<List<racePoint>> visiblePointsPerRacer, Course course)
+        {
+            Console.WriteLine($"[ThreadSafe] Called with {visiblePointsPerRacer.Count} racers");
+
+            if (currentPlotView is not PlotViewWithOverlay pv)
+            {
+                Console.WriteLine("[ThreadSafe] currentPlotView is NOT PlotViewWithOverlay!");
+                return;
+            }
+
+            var aircraftPositions = new List<DataPoint>();
+
+            foreach (var points in visiblePointsPerRacer)
+            {
+                if (points.Count == 0) continue;
+
+                var pt = points.Last();
+                var dp = new DataPoint(pt.X * course.CourseImage.ScaleX, pt.Y * course.CourseImage.ScaleY);
+                aircraftPositions.Add(dp);
+            }
+
+            Console.WriteLine($"[ThreadSafe] About to invoke with {aircraftPositions.Count} aircraft");
+
+            pv.Invoke(() =>
+            {
+                Console.WriteLine($"[UI Thread] Setting {aircraftPositions.Count} aircraft");
+                pv.AircraftPositions = aircraftPositions;
+                pv.Invalidate();
+                Application.DoEvents();
+                //pv.Update();
+            });
+        }
+
+
+
+        public void DrawAircraftPositions(List<DataPoint> aircraftPositions)
+        {
+            if (currentPlotView is PlotViewWithOverlay pv)
+            {
+                pv.AircraftPositions = aircraftPositions;
+                pv.Invalidate(); // Triggers overlay redraw
+            }
+        }
+
+
+
+
+
+        public void DrawAircraft(List<DataPoint> aircraftPositions)
+        {
+            if (_backgroundBitmap == null || _plotBitmapBox == null || plotTransform == null || _workingBitmap == null)
+                return;
+
+            try
+            {
+                using (Graphics g = Graphics.FromImage(_workingBitmap))
+                {
+                    g.Clear(Color.Transparent); // Optional if you want alpha to persist
+                    g.DrawImageUnscaled(_backgroundBitmap, 0, 0); // Draw original background
+
+                    foreach (var pt in aircraftPositions)
+                    {
+                        PointF screenPt = plotTransform.Transform(pt.X, pt.Y);
+
+                        if (float.IsNaN(screenPt.X) || float.IsNaN(screenPt.Y))
+                            continue;
+
+                        g.FillEllipse(Brushes.LimeGreen, screenPt.X - 4, screenPt.Y - 4, 8, 8);
+                        break;
+                    }
+                }
+
+                // Just re-assign the shared bitmap
+                _plotBitmapBox.Image = _workingBitmap;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[DrawAircraft] Error: {ex.Message}");
+            }
+        }
+
+
+
+
+        public void DrawAircraft2(List<DataPoint> aircraftPositions)
+        {
+            if (_backgroundBitmap == null || _plotBitmapBox == null || plotTransform == null)
+            {
+                Console.WriteLine("[DrawAircraft] Skipping — bitmap or transform missing.");
+                return;
+            }
+
+            try
+            {
+                // Create a brand-new Bitmap and copy background manually
+                Bitmap updated = new Bitmap(_backgroundBitmap.Width, _backgroundBitmap.Height, PixelFormat.Format32bppArgb);
+
+                using (Graphics g = Graphics.FromImage(updated))
+                {
+                    // Copy the background
+                    g.DrawImage(_backgroundBitmap, new Rectangle(0, 0, _backgroundBitmap.Width, _backgroundBitmap.Height));
+
+                    // Draw aircraft
+                    foreach (var pt in aircraftPositions)
+                    {
+                        PointF screenPt = plotTransform.Transform(pt.X, pt.Y);
+                        if (float.IsNaN(screenPt.X) || float.IsNaN(screenPt.Y)) continue;
+
+                        g.FillEllipse(Brushes.LimeGreen, screenPt.X - 4, screenPt.Y - 4, 8, 8);
+                    }
+                }
+
+                // Swap the image
+                var old = _plotBitmapBox.Image;
+                _plotBitmapBox.Image = updated;
+                old?.Dispose();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[DrawAircraft] Error: {ex.Message}");
+            }
+        }
+
+
+
+        public void DrawAircraftOG(List<DataPoint> aircraftPositions)
+        {
+            if (_backgroundBitmap == null || _plotBitmapBox == null || plotTransform == null)
+                return;
+
+            // Create a copy of the background to draw on
+            Bitmap updated = new Bitmap(_backgroundBitmap);
+            using (Graphics g = Graphics.FromImage(updated))
+            {
+                foreach (var pt in aircraftPositions)
+                {
+                    PointF screenPt = plotTransform.Transform(pt.X, pt.Y);
+                    g.FillEllipse(Brushes.LimeGreen, screenPt.X - 4, screenPt.Y - 4, 8, 8);
+                }
+            }
+
+            // Swap image
+            var old = _plotBitmapBox.Image;
+            _plotBitmapBox.Image = updated;
+            old?.Dispose();
+        }
+
+
+
+
+
 
         public string getColorName(OxyColor color)
         {

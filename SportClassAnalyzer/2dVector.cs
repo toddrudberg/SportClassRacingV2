@@ -6,9 +6,48 @@ using System.Threading.Tasks;
 
 namespace SportClassAnalyzer
 {
+    /// <summary>
+    /// from racecouse coordinates to the bitmap coordinates
+    /// </summary>
+    public class PlotTransform
+    {
+        private double _xMin, _xMax, _yMin, _yMax;
+        private int _bitmapWidth, _bitmapHeight;
+
+        public PlotTransform(double xMin, double xMax, double yMin, double yMax, int bitmapWidth, int bitmapHeight)
+        {
+            _xMin = xMin;
+            _xMax = xMax;
+            _yMin = yMin;
+            _yMax = yMax;
+            _bitmapWidth = bitmapWidth;
+            _bitmapHeight = bitmapHeight;
+        }
+
+        public PointF Transform(double x, double y)
+        {
+            double normalizedX = (x - _xMin) / (_xMax - _xMin);
+            double normalizedY = (y - _yMin) / (_yMax - _yMin);
+
+            float screenX = (float)(normalizedX * _bitmapWidth);
+            float screenY = (float)((1.0 - normalizedY) * _bitmapHeight); // Flip Y
+
+            return new PointF(screenX, screenY);
+        }
+    }
 
     public class _2dVector
     {
+        public static double calculateTheta(Waypoint centerPylon, cPoint pt)
+        {
+            // calculate the angle of each pylon relative to the line between the home pylon and the center pylon
+            double thetaOffset = -Math.Atan2(-centerPylon.X, -centerPylon.Y);
+            thetaOffset = thetaOffset < 0 ? thetaOffset + 2 * Math.PI : thetaOffset;
+            thetaOffset = thetaOffset.R2D();
+            double theta = -Math.Atan2(pt.X - centerPylon.X, pt.Y - centerPylon.Y) - thetaOffset.D2R();
+            theta = theta < 0 ? theta + 2 * Math.PI : theta;                    
+            return theta.R2D();            
+        }
     }
 
     public class cPoint
@@ -119,6 +158,7 @@ namespace SportClassAnalyzer
     public class cLatLon
     {
         //20905746.8 feet the earth radius at lac cruces
+        //20,886,381.90 at Colville
         //20925524.9 feet the earth radius average
         private const double EarthRadiusFeet = 20925524.9; // Earth's radius in feet
 

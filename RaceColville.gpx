@@ -11,3 +11,13 @@
   <wpt lat="48.543560" lon="-117.855551"><name>Gate1</name></wpt>
   <wpt lat="48.542969" lon="-117.851672"><name>Gate2</name></wpt>
 </pylons>
+
+
+
+            // Define coordinates for scaling (latitude and longitude)
+            // double upperLeftLat = 48.560188;  // Upper-left latitude
+            // double upperLeftLon = -117.920058; // Upper-left longitude
+            // double lowerRightLat = 48.522863;  // Lower-right latitude
+            // double lowerRightLon = -117.824994; // Lower-right longitude
+
+

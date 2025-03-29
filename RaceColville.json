@@ -1,0 +1,74 @@
+{
+  "course": {
+    "elevationInFeet": 1883,
+    "courseImage": {
+      "imageFile": "C:\\LocalDev\\SportClassRacingV2\\ColvilleRaceCourse-2.png",
+      "upperLeft": {
+        "latitude": 48.560188,
+        "longitude": -117.920058
+      },
+      "lowerRight": {
+        "latitude": 48.522863,
+        "longitude": -117.824994
+      },
+      "offsetX": 165.0,
+      "offsetY": -70.0,
+      "scaleX": 1.0,
+      "scaleY": 1.0
+    },
+    "pylons": {
+      "waypoints": [
+        {
+          "latitude": 48.543374,
+          "longitude": -117.883487,
+          "name": "Home"
+        },
+        {
+            "latitude":  48.541188,
+            "longitude": -117.878256,
+            "name": "Center"
+          },
+        {
+          "latitude": 48.534190,
+          "longitude": -117.891310,
+          "name": "oP1"
+        },
+        {
+          "latitude": 48.525167,
+          "longitude": -117.880167,
+          "name": "oP2"
+        },
+        {
+          "latitude": 48.548849,
+          "longitude": -117.857066,
+          "name": "oP3"
+        },
+        {
+          "latitude": 48.552587,
+          "longitude": -117.860559,
+          "name": "oP4"
+        },
+        {
+          "latitude": 48.553317,
+          "longitude": -117.867450,
+          "name": "oP5"
+        },
+        {
+          "latitude": 48.544178,
+          "longitude": -117.884810,
+          "name": "StartFinish"
+        },
+        {
+          "latitude": 48.543560,
+          "longitude": -117.855551,
+          "name": "Gate1"
+        },
+        {
+          "latitude": 48.542969,
+          "longitude": -117.851672,
+          "name": "Gate2"
+        }
+      ]
+    }
+  }
+}
