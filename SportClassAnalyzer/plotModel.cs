@@ -145,7 +145,6 @@ namespace SportClassAnalyzer
             List<DataPoint> aircraftPositions = new List<DataPoint>();
             aircraftPositions.Add(dp);
             aircraftPositions.Add(dp);
-            //DrawAircraftPositions(aircraftPositions);
         }
 
         private void plotBackGroundImage(PlotModel plotModel, Course course, out cPoint upperLeft, out cPoint lowerRight)
