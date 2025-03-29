@@ -8,7 +8,9 @@ using System.IO;
 using System.Collections.Generic;
 using OxyPlot.WindowsForms;
 using System.Windows.Forms;
+
 using Microsoft.VisualBasic.Devices;
+
 
 
 
@@ -40,6 +42,12 @@ namespace SportClassAnalyzer
         private List<LineSeries> _racerTrails = new List<LineSeries>();
 
         private PlotView currentPlotView;
+        private Bitmap _backgroundBitmap;
+        private PictureBox _plotBitmapBox;
+        private PlotTransform plotTransform;
+        private Bitmap _workingBitmap;
+        // Add this field to your class to track the previous position
+        private PointF? _previousScreenPt = null;//_previousScreenPt
 
 
 
@@ -518,9 +526,37 @@ namespace SportClassAnalyzer
                 Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right
             };
 
-            form.Controls.Add(currentPlotView);
-            currentPlotView.BringToFront();
-            currentPlotView.Show();
+            //form.Controls.Add(currentPlotView);
+            //currentPlotView.BringToFront();
+            //currentPlotView.Show();
+
+            _backgroundBitmap = RenderPlotToBitmap(plotModel, form.ClientSize.Width, form.ClientSize.Height);
+            _workingBitmap = new Bitmap(_backgroundBitmap.Width, _backgroundBitmap.Height);
+            _workingBitmap.SetResolution(_backgroundBitmap.HorizontalResolution, _backgroundBitmap.VerticalResolution);
+
+
+            _plotBitmapBox = new PictureBox
+            {
+                Image = _backgroundBitmap,
+                SizeMode = PictureBoxSizeMode.Normal,
+                Location = new Point(0, 30),
+                Size = new Size(form.ClientSize.Width, form.ClientSize.Height - 30),
+                Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right
+            };
+
+            form.Controls.Add(_plotBitmapBox);
+            _plotBitmapBox.BringToFront();
+            _plotBitmapBox.Show();
+
+            // Get world bounds from axes
+            double xMin = plotModel.DefaultXAxis.ActualMinimum;
+            double xMax = plotModel.DefaultXAxis.ActualMaximum;
+            double yMin = plotModel.DefaultYAxis.ActualMinimum;
+            double yMax = plotModel.DefaultYAxis.ActualMaximum;
+
+            plotTransform = new PlotTransform(xMin, xMax, yMin, yMax, _backgroundBitmap.Width, _backgroundBitmap.Height);
+
+            DrawAircraft(new List<DataPoint> { new DataPoint(500, 0) });
 
             // Confirm layout
             form.PerformLayout();
@@ -556,6 +592,7 @@ namespace SportClassAnalyzer
         }
 
 
+
         public void UpdateRacerTrails(Form form, List<List<racePoint>> visiblePointsPerRacer, Course course)
         {
             for (int i = 0; i < visiblePointsPerRacer.Count; i++)
@@ -567,12 +604,15 @@ namespace SportClassAnalyzer
                 DataPoint Head = new DataPoint(0, 0);
                 DataPoint Tail = new DataPoint(0, 0);
 
+
                 for (int j = 0; j < points.Count; j++)
                 {
                     var pt = points[j];
                     var dp = new DataPoint(pt.X * course.CourseImage.ScaleX, pt.Y * course.CourseImage.ScaleY);
+
                     trail.Points.Add(dp);
                     if (j == 0)
+
                     {
                         Tail = dp;
                     }
@@ -582,6 +622,7 @@ namespace SportClassAnalyzer
                     }
                 }
 
+
                 // Now add or update an arrow annotation for direction
                 string arrowName = $"AircraftArrow_{i}";
                 var existingArrow = currentPlotView.Model.Annotations.FirstOrDefault(a => a.Tag?.ToString() == arrowName) as ArrowAnnotation;
@@ -590,6 +631,7 @@ namespace SportClassAnalyzer
                 double dx = Head.X - Tail.X;
                 double dy = Head.Y - Tail.Y;
                 double length = Math.Sqrt(dx * dx + dy * dy);
+
 
                 // Only show arrow if we have enough movement to determine direction
                 if (length > 0.0001)  // Small threshold to avoid division by zero
