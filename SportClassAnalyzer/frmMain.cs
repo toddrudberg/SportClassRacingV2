@@ -533,56 +533,12 @@ namespace SportClassAnalyzer
                     visiblePerRacer.Add(visiblePoints);
                 }
                 racePlotModel.UpdateRacerTrails(this, visiblePerRacer, course);
-                racePlotModel.UpdateAircraftPositions(this, visiblePerRacer, course);
+                //racePlotModel.UpdateAircraftPositions(this, visiblePerRacer, course);
                 Console.WriteLine($"Cycle time: {cycleTime.ElapsedMilliseconds} ms");
                 cycleTime.Restart();
                 Thread.Sleep(16); 
             }
 
-            stopwatch.Stop();
-        }
-
-        public void PlayBackLoopInBackground(RacePlotModel racePlotModel, Course course, List<cRaceData> allRaceData, double playbackSpeed = 1.0)
-        {
-            DateTime earliestTime = DateTime.MaxValue;
-            DateTime longestTime = DateTime.MinValue;
-
-            foreach (var raceData in allRaceData)
-            {
-                if (raceData.racePoints.Count == 0) continue;
-                earliestTime = raceData.racePoints[0].time < earliestTime ? raceData.racePoints[0].time : earliestTime;
-                longestTime = raceData.racePoints[^1].time > longestTime ? raceData.racePoints[^1].time : longestTime;
-            }
-
-            DateTime startTime = earliestTime;
-            TimeSpan maxDuration = longestTime - startTime;
-            TimeSpan trailingWindow = TimeSpan.FromSeconds(1);
-
-            Stopwatch stopwatch = Stopwatch.StartNew();
-            Stopwatch et = Stopwatch.StartNew();
-
-            while (true)
-            {
-                TimeSpan scaledElapsed = TimeSpan.FromSeconds(stopwatch.Elapsed.TotalSeconds * playbackSpeed);
-                if (scaledElapsed > maxDuration)
-                    break;
-
-                DateTime playbackTime = startTime + scaledElapsed;
-
-                var visiblePerRacer = allRaceData
-                    .Select(r => r.racePoints
-                        .Where(p => p.time <= playbackTime && p.time >= playbackTime - trailingWindow)
-                        .ToList())
-                    .ToList();
-
-                racePlotModel.UpdateAircraftPositionsThreadSafe(visiblePerRacer, course);
-
-                Console.WriteLine($"Refresh Rate: {et.ElapsedMilliseconds}ms");
-                et.Restart();
-
-                Thread.Sleep(16); // ~60 FPS
-            }
-            
             stopwatch.Stop();
         }
 

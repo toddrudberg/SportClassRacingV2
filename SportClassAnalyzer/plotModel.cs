@@ -15,60 +15,6 @@ namespace SportClassAnalyzer
 {
     public class RacePlotModel
     {
-        public class PlotViewWithOverlay : PlotView
-        {
-            public List<DataPoint> AircraftPositions { get; set; } = new();
-            public PlotModel PlotModelRef { get; set; }
-
-            public PlotViewWithOverlay()
-            {
-                this.DoubleBuffered = true;
-            }
-            protected override void OnPaint(PaintEventArgs e)
-            {
-                base.OnPaint(e); // Always call base first to draw the plot
-
-                if (AircraftPositions == null || AircraftPositions.Count == 0)
-                {
-                    //Console.WriteLine("[Paint] No aircraft to draw.");
-                    return;
-                }
-
-                if (PlotModelRef == null)
-                {
-                    //Console.WriteLine("[Paint] No plot model.");
-                    return;
-                }
-
-                var xAxis = PlotModelRef.Axes.FirstOrDefault(a => a.Position == AxisPosition.Bottom);
-                var yAxis = PlotModelRef.Axes.FirstOrDefault(a => a.Position == AxisPosition.Left);
-
-                if (xAxis == null || yAxis == null)
-                {
-                    //Console.WriteLine("[Paint] Axes not found.");
-                    return;
-                }
-
-                //Console.WriteLine($"[Paint] Drawing {AircraftPositions.Count} aircraft...");
-
-                foreach (var pos in AircraftPositions)
-                {
-                    var screenPoint = xAxis.Transform(pos.X, pos.Y, yAxis);
-                    //Console.WriteLine($"[Paint] Aircraft at world {pos.X:F2}, {pos.Y:F2} → screen {screenPoint.X:F2}, {screenPoint.Y:F2}");
-
-                    float sx = (float)screenPoint.X;
-                    float sy = (float)screenPoint.Y;
-
-                    // Do NOT invert Y — OxyPlot already handles it
-                    e.Graphics.FillEllipse(Brushes.LimeGreen, sx - 8, sy - 8, 16, 16);
-                }
-            }
-
-
-
-        }
-
-
         public List<OxyColor> oxyColors = new List<OxyColor>
         {
             OxyColors.Blue,
@@ -562,10 +508,9 @@ namespace SportClassAnalyzer
             // Create and add the enhanced plot view
             int menuBarHeight = 30;
 
-            currentPlotView = new PlotViewWithOverlay
+            currentPlotView = new PlotView
             {
                 Model = plotModel,
-                PlotModelRef = plotModel,
                 Dock = DockStyle.None,
                 Location = new Point(0, menuBarHeight),
                 Size = new Size(form.ClientSize.Width, form.ClientSize.Height - menuBarHeight),
@@ -636,81 +581,13 @@ namespace SportClassAnalyzer
                 
 
             }
-            DrawAircraftPositions(aircraftPositions);
-            //currentPlotView.Model.InvalidatePlot(false);
+            //DrawAircraftPositions(aircraftPositions);
+            currentPlotView.Model.InvalidatePlot(false);
             //form.PerformLayout();
             //form.Invalidate();
-            //form.Update();
+            form.Update();
             //form.Refresh();
         }
-
-        public void UpdateAircraftPositions(Form form, List<List<racePoint>> visiblePointsPerRacer, Course course)
-        {
-            if (currentPlotView is not PlotViewWithOverlay pv)
-                return;
-
-            List<DataPoint> aircraftPositions = new List<DataPoint>();
-
-            foreach (var points in visiblePointsPerRacer)
-            {
-                if (points.Count == 0)
-                    continue;
-
-                var pt = points.Last(); // Get latest
-                var dp = new DataPoint(pt.X * course.CourseImage.ScaleX, pt.Y * course.CourseImage.ScaleY);
-                aircraftPositions.Add(dp);
-            }
-
-            pv.AircraftPositions = aircraftPositions;
-            pv.Invalidate(); // Fast, localized redraw
-            form.Update();
-        }
-
-        public void UpdateAircraftPositionsThreadSafe(List<List<racePoint>> visiblePointsPerRacer, Course course)
-        {
-            //Console.WriteLine($"[ThreadSafe] Called with {visiblePointsPerRacer.Count} racers");
-
-            if (currentPlotView is not PlotViewWithOverlay pv)
-            {
-                //Console.WriteLine("[ThreadSafe] currentPlotView is NOT PlotViewWithOverlay!");
-                return;
-            }
-
-            var aircraftPositions = new List<DataPoint>();
-
-            foreach (var points in visiblePointsPerRacer)
-            {
-                if (points.Count == 0) continue;
-
-                var pt = points.Last();
-                var dp = new DataPoint(pt.X * course.CourseImage.ScaleX, pt.Y * course.CourseImage.ScaleY);
-                aircraftPositions.Add(dp);
-            }
-
-            //Console.WriteLine($"[ThreadSafe] About to invoke with {aircraftPositions.Count} aircraft");
-
-            pv.Invoke(() =>
-            {
-                //Console.WriteLine($"[UI Thread] Setting {aircraftPositions.Count} aircraft");
-                pv.AircraftPositions = aircraftPositions;
-                pv.Invalidate();
-                Application.DoEvents();
-                //pv.Update();
-            });
-        }
-
-
-
-        public void DrawAircraftPositions(List<DataPoint> aircraftPositions)
-        {
-            if (currentPlotView is PlotViewWithOverlay pv)
-            {
-                pv.AircraftPositions = aircraftPositions;
-                pv.Invalidate(); // Triggers overlay redraw
-            }
-        }
-
-
 
         public string getColorName(OxyColor color)
         {
