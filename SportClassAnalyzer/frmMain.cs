@@ -474,6 +474,7 @@ namespace SportClassAnalyzer
             // Create a plot model for multiple races using the filtered data
             RacePlotModel racePlotModel = new RacePlotModel();
             racePlotModel.CreateMultipleRacePlotModel(this, myFormState, myCourse, filteredRaceData);
+
             //PlayBackWithTrailingWindow(racePlotModel, myCourse, filteredRaceData, 5.0);
 
             _playbackCancellationTokenSource = new CancellationTokenSource();
@@ -482,6 +483,7 @@ namespace SportClassAnalyzer
                 {
                     PlayBackWithTrailingWindow(racePlotModel, myCourse, filteredRaceData, token, 1.0);
                 });
+
 
         }
 
@@ -550,11 +552,13 @@ namespace SportClassAnalyzer
                     numPoints.Add(visiblePoints.Count);
                     visiblePerRacer.Add(visiblePoints);
                 }
+
                 //racePlotModel.UpdateRacerTrails(this, visiblePerRacer, course);
                 this.Invoke(() =>
                 {
                     racePlotModel.UpdateRacerTrails(this, visiblePerRacer, course);
                 });
+
 
                 Console.WriteLine($"Cycle time: {cycleTime.ElapsedMilliseconds} ms");
                 cycleTime.Restart();
