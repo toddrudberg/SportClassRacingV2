@@ -509,12 +509,25 @@ namespace SportClassAnalyzer
 
             TimeSpan maxDuration = longestTime - startTime;
 
-            Stopwatch cycleTime = new Stopwatch();
-            cycleTime.Start();
+            Stopwatch swRefreshRate = new Stopwatch();
+            //cycleTime.Start();
+
+            Stopwatch simulationUpdateTimer = new Stopwatch();
+            simulationUpdateTimer.Start();
+
+            bool _UIReady = true;
             while (true)
             {
                 if (cancellationToken.IsCancellationRequested)
                     break;
+
+                if( simulationUpdateTimer.ElapsedMilliseconds < 101) //the data is only available every 100ms.
+                {
+                    continue;
+                }
+                simulationUpdateTimer.Restart();
+                
+
                 TimeSpan scaledElapsed = TimeSpan.FromSeconds(stopwatch.Elapsed.TotalSeconds * playbackSpeed);
                 DateTime playbackTime = startTime + scaledElapsed;
 
@@ -550,15 +563,19 @@ namespace SportClassAnalyzer
                     numPoints.Add(visiblePoints.Count);
                     visiblePerRacer.Add(visiblePoints);
                 }
-                //racePlotModel.UpdateRacerTrails(this, visiblePerRacer, course);
-                this.Invoke(() =>
+                
+                if( _UIReady == true)
                 {
-                    racePlotModel.UpdateRacerTrails(this, visiblePerRacer, course);
-                });
-
-                Console.WriteLine($"Cycle time: {cycleTime.ElapsedMilliseconds} ms");
-                cycleTime.Restart();
-                Thread.Sleep(1);
+                    _UIReady = false;
+                    swRefreshRate.Restart();
+                    this.BeginInvoke(() =>
+                    {                        
+                        racePlotModel.UpdateRacerTrails(this, visiblePerRacer, course);
+                        _UIReady = true;
+                        Console.WriteLine($"Cycle time: {swRefreshRate.ElapsedMilliseconds} ms");
+                        swRefreshRate.Stop();
+                    });
+                }                         
             }
 
             stopwatch.Stop();
