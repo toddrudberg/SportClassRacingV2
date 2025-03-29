@@ -567,6 +567,7 @@ namespace SportClassAnalyzer
         private void cancelAnimationToolStripMenuItem_Click(object sender, EventArgs e)
         {
             _playbackCancellationTokenSource?.Cancel();
+            MessageBox.Show("Playback cancelled.", "Playback Cancelled", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
     }
 }
