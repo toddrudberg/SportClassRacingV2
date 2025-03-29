@@ -476,30 +476,70 @@ namespace SportClassAnalyzer
             racePlotModel.CreateMultipleRacePlotModel(this, myFormState, myCourse, filteredRaceData);
             //PlayBackWithTrailingWindow(racePlotModel, myCourse, filteredRaceData, 5.0);
 
+
+            // Create a new form for the leaderboard
+            // Locate the form in the bottom right corner of the frmMain
+
+
+
+            frmLeaderBoard leaderBoardForm = new frmLeaderBoard();
+
+            leaderBoardForm.Location = new Point(this.Location.X + this.Width - leaderBoardForm.Width - 10, this.Location.Y + this.Height - leaderBoardForm.Height - 10);
+            leaderBoardForm.StartPosition = FormStartPosition.Manual;
+            leaderBoardForm.FormBorderStyle = FormBorderStyle.SizableToolWindow;
+            leaderBoardForm.TopMost = true;
+            leaderBoardForm.ShowInTaskbar = false;
+            leaderBoardForm.Text = "Leader Board";
+            leaderBoardForm.FormClosing += (s, args) =>
+            {
+                _playbackCancellationTokenSource?.Cancel();
+                leaderBoardForm.Dispose();
+            };
+            leaderBoardForm.FormClosed += (s, args) =>
+            {
+                _playbackCancellationTokenSource?.Cancel();
+                leaderBoardForm.Dispose();
+            };
+
+            leaderBoardForm.Show();
+
             _playbackCancellationTokenSource = new CancellationTokenSource();
             var token = _playbackCancellationTokenSource.Token;
             Task.Run(() =>
                 {
-                    PlayBackWithTrailingWindow(racePlotModel, myCourse, filteredRaceData, token, 1.0);
+                    RunSimulation(racePlotModel, myCourse, filteredRaceData, token, leaderBoardForm, 1.0);
                 });
 
         }
 
-        public void PlayBackWithTrailingWindow(RacePlotModel racePlotModel, Course course, List<cRaceData> allRaceData, CancellationToken cancellationToken, double playbackSpeed = 1.0)
+        public void RunSimulation(RacePlotModel racePlotModel, Course course, List<cRaceData> allRaceData, CancellationToken cancellationToken, frmLeaderBoard leaderBoardForm, double playbackSpeed = 1.0)
         {
             System.DateTime earliestTime = System.DateTime.MaxValue;
             System.DateTime longestTime = System.DateTime.MinValue;
-            if (true)
-            {
-                for (int i = 0; i < allRaceData.Count; i++)
-                {
-                    cRaceData raceData = allRaceData[i];
-                    if (raceData.racePoints.Count == 0)
-                        continue;
+            List<cRacerStatus> racerStatuses = new List<cRacerStatus>();
+            
 
-                    earliestTime = raceData.racePoints[0].time < earliestTime ? raceData.racePoints[0].time : earliestTime;
-                    longestTime = raceData.racePoints[raceData.racePoints.Count - 1].time > longestTime ? raceData.racePoints[raceData.racePoints.Count - 1].time : longestTime;
-                }
+            LeaderBoard leaderBoard = new LeaderBoard();
+
+
+            for (int i = 0; i < allRaceData.Count; i++)
+            {
+                cRaceData raceData = allRaceData[i];
+                if (raceData.racePoints.Count == 0)
+                    continue;
+
+                earliestTime = raceData.racePoints[0].time < earliestTime ? raceData.racePoints[0].time : earliestTime;
+                longestTime = raceData.racePoints[raceData.racePoints.Count - 1].time > longestTime ? raceData.racePoints[raceData.racePoints.Count - 1].time : longestTime;
+
+                racerStatuses.Add(new cRacerStatus
+                {
+                    Name = $"Racer {i + 1}",
+                    Position = 0,
+                    Speed = 0,
+                    TimeToLeader = 0,
+                    TimeToNext = 0,
+                    LapsCompleted = 0
+                });
             }
 
             DateTime startTime = earliestTime;
@@ -553,9 +593,10 @@ namespace SportClassAnalyzer
                         double dy = speedPoints[0].Y - speedPoints[speedPoints.Count - 1].Y;
                         double distance = Math.Sqrt(dx * dx + dy * dy);
                         double speed = distance / trailingWindow.TotalSeconds;
+                        racerStatuses[i].Position = i + 1;
+                        racerStatuses[i].Speed = (float)(speed * 3600 / 5280);
                         trailingWindow = TimeSpan.FromSeconds(250 / speed);
                     }
-
 
                     var visiblePoints = points
                         .Where(p => p.time <= playbackTime && p.time >= playbackTime - trailingWindow)
@@ -563,8 +604,11 @@ namespace SportClassAnalyzer
                     numPoints.Add(visiblePoints.Count);
                     visiblePerRacer.Add(visiblePoints);
                 }
-                
-                if( _UIReady == true)
+
+                leaderBoard._racerStatuses = racerStatuses;
+                leaderBoardForm.UpdateDisplay(leaderBoard);
+
+                if ( _UIReady == true)
                 {
                     _UIReady = false;
                     swRefreshRate.Restart();
