@@ -11,6 +11,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Diagnostics;
 using Pastel;
+using System.Threading;
 
 
 namespace SportClassAnalyzer
@@ -29,7 +30,7 @@ namespace SportClassAnalyzer
         public List<cLapCrossings> myStartGateCrossings = new List<cLapCrossings>();
 
         private bool raceBuilt = false;
-
+        private CancellationTokenSource _playbackCancellationTokenSource;
 
         #region Console Output
         [DllImport("kernel32.dll")]
@@ -450,12 +451,6 @@ namespace SportClassAnalyzer
                     int startIndex = 0;
                     int endIndex = raceLapCrossings[raceLapCrossings.Count - 1].dataPoint;
 
-                    // If start gate crossings were detected, use the first one as the start
-                    //if (raceStartGateCrossings.Count > 0)
-                    //{
-                    //    startIndex = Math.Max(0, raceStartGateCrossings[0].dataPoint - 5);
-                    //}
-
                     // Extract only the points between start and end
                     filteredData.racePoints = new List<racePoint>(
                         raceData.racePoints.GetRange(startIndex, endIndex - startIndex + 1));
@@ -479,10 +474,18 @@ namespace SportClassAnalyzer
             // Create a plot model for multiple races using the filtered data
             RacePlotModel racePlotModel = new RacePlotModel();
             racePlotModel.CreateMultipleRacePlotModel(this, myFormState, myCourse, filteredRaceData);
-            PlayBackWithTrailingWindow(racePlotModel, myCourse, filteredRaceData, 5.0);
+            //PlayBackWithTrailingWindow(racePlotModel, myCourse, filteredRaceData, 5.0);
+
+            _playbackCancellationTokenSource = new CancellationTokenSource();
+            var token = _playbackCancellationTokenSource.Token;
+            Task.Run(() =>
+                {
+                    PlayBackWithTrailingWindow(racePlotModel, myCourse, filteredRaceData, token, 1.0);
+                });
+
         }
 
-        public void PlayBackWithTrailingWindow(RacePlotModel racePlotModel, Course course, List<cRaceData> allRaceData, double playbackSpeed = 1.0)
+        public void PlayBackWithTrailingWindow(RacePlotModel racePlotModel, Course course, List<cRaceData> allRaceData, CancellationToken cancellationToken, double playbackSpeed = 1.0)
         {
             System.DateTime earliestTime = System.DateTime.MaxValue;
             System.DateTime longestTime = System.DateTime.MinValue;
@@ -503,14 +506,16 @@ namespace SportClassAnalyzer
             Stopwatch stopwatch = new Stopwatch();
             stopwatch.Start();
 
-            
+
             TimeSpan maxDuration = longestTime - startTime;
-            
+
             Stopwatch cycleTime = new Stopwatch();
             cycleTime.Start();
             while (true)
             {
-                TimeSpan scaledElapsed = TimeSpan.FromSeconds(stopwatch.Elapsed.TotalSeconds * playbackSpeed) ;
+                if (cancellationToken.IsCancellationRequested)
+                    break;
+                TimeSpan scaledElapsed = TimeSpan.FromSeconds(stopwatch.Elapsed.TotalSeconds * playbackSpeed);
                 DateTime playbackTime = startTime + scaledElapsed;
 
                 // End playback when past the last data point
@@ -529,7 +534,7 @@ namespace SportClassAnalyzer
                     var speedPoints = points
                         .Where(p => p.time <= playbackTime && p.time >= playbackTime - trailingWindow)
                         .ToList();
-                    if(speedPoints.Count > 2)
+                    if (speedPoints.Count > 2)
                     {
                         double dx = speedPoints[0].X - speedPoints[speedPoints.Count - 1].X;
                         double dy = speedPoints[0].Y - speedPoints[speedPoints.Count - 1].Y;
@@ -545,15 +550,23 @@ namespace SportClassAnalyzer
                     numPoints.Add(visiblePoints.Count);
                     visiblePerRacer.Add(visiblePoints);
                 }
-                racePlotModel.UpdateRacerTrails(this, visiblePerRacer, course);
-                //racePlotModel.UpdateAircraftPositions(this, visiblePerRacer, course);
+                //racePlotModel.UpdateRacerTrails(this, visiblePerRacer, course);
+                this.Invoke(() =>
+                {
+                    racePlotModel.UpdateRacerTrails(this, visiblePerRacer, course);
+                });
+
                 Console.WriteLine($"Cycle time: {cycleTime.ElapsedMilliseconds} ms");
                 cycleTime.Restart();
-                Thread.Sleep(16); 
+                Thread.Sleep(1);
             }
 
             stopwatch.Stop();
         }
 
+        private void cancelAnimationToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            _playbackCancellationTokenSource?.Cancel();
+        }
     }
 }

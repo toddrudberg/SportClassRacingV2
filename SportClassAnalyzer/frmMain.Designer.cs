@@ -38,6 +38,7 @@ namespace SportClassAnalyzer
             raceOptionsToolStripMenuItem = new ToolStripMenuItem();
             selectCourseToolStripMenuItem = new ToolStripMenuItem();
             toolStripSeparator1 = new ToolStripSeparator();
+            cancelAnimationToolStripMenuItem = new ToolStripMenuItem();
             menuStrip1.SuspendLayout();
             SuspendLayout();
             // 
@@ -54,7 +55,7 @@ namespace SportClassAnalyzer
             // 
             // fileToolStripMenuItem
             // 
-            fileToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { openToolStripMenuItem, openRaceBoxFileToolStripMenuItem, selectRaceCourseFileToolStripMenuItem, playbackAllRacesInFolderToolStripMenuItem });
+            fileToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { openToolStripMenuItem, openRaceBoxFileToolStripMenuItem, selectRaceCourseFileToolStripMenuItem, playbackAllRacesInFolderToolStripMenuItem, cancelAnimationToolStripMenuItem });
             fileToolStripMenuItem.Name = "fileToolStripMenuItem";
             fileToolStripMenuItem.Size = new Size(71, 38);
             fileToolStripMenuItem.Text = "File";
@@ -62,31 +63,31 @@ namespace SportClassAnalyzer
             // openToolStripMenuItem
             // 
             openToolStripMenuItem.Name = "openToolStripMenuItem";
-            openToolStripMenuItem.Size = new Size(393, 44);
+            openToolStripMenuItem.Size = new Size(441, 44);
             openToolStripMenuItem.Text = "Open";
             openToolStripMenuItem.Click += openToolStripMenuItem_Click;
             // 
             // openRaceBoxFileToolStripMenuItem
             // 
             openRaceBoxFileToolStripMenuItem.Name = "openRaceBoxFileToolStripMenuItem";
-            openRaceBoxFileToolStripMenuItem.Size = new Size(393, 44);
+            openRaceBoxFileToolStripMenuItem.Size = new Size(441, 44);
             openRaceBoxFileToolStripMenuItem.Text = "Open RaceBox File";
             openRaceBoxFileToolStripMenuItem.Click += openRaceBoxFileToolStripMenuItem_Click;
             // 
             // selectRaceCourseFileToolStripMenuItem
-            //
+            // 
             selectRaceCourseFileToolStripMenuItem.Name = "selectRaceCourseFileToolStripMenuItem";
-            selectRaceCourseFileToolStripMenuItem.Size = new Size(393, 44);
+            selectRaceCourseFileToolStripMenuItem.Size = new Size(441, 44);
             selectRaceCourseFileToolStripMenuItem.Text = "Select Race Course File";
             selectRaceCourseFileToolStripMenuItem.Click += selectRaceCourseFileToolStripMenuItem_Click;
-            //
+            // 
             // playbackAllRacesInFolderToolStripMenuItem
-            //
+            // 
             playbackAllRacesInFolderToolStripMenuItem.Name = "playbackAllRacesInFolderToolStripMenuItem";
-            playbackAllRacesInFolderToolStripMenuItem.Size = new Size(393, 44);
+            playbackAllRacesInFolderToolStripMenuItem.Size = new Size(441, 44);
             playbackAllRacesInFolderToolStripMenuItem.Text = "Playback All Races in Folder";
             playbackAllRacesInFolderToolStripMenuItem.Click += playbackAllRacesInFolderToolStripMenuItem_Click;
-            //
+            // 
             // raceOptionsToolStripMenuItem
             // 
             raceOptionsToolStripMenuItem.CheckOnClick = true;
@@ -105,6 +106,13 @@ namespace SportClassAnalyzer
             // 
             toolStripSeparator1.Name = "toolStripSeparator1";
             toolStripSeparator1.Size = new Size(290, 6);
+            // 
+            // cancelAnimationToolStripMenuItem
+            // 
+            cancelAnimationToolStripMenuItem.Name = "cancelAnimationToolStripMenuItem";
+            cancelAnimationToolStripMenuItem.Size = new Size(441, 44);
+            cancelAnimationToolStripMenuItem.Text = "Cancel Animation";
+            cancelAnimationToolStripMenuItem.Click += cancelAnimationToolStripMenuItem_Click;
             // 
             // frmMain
             // 
@@ -133,5 +141,6 @@ namespace SportClassAnalyzer
         private ToolStripMenuItem setPylonFileToolStripMenuItem;
         private ToolStripMenuItem selectRaceCourseFileToolStripMenuItem;
         private ToolStripMenuItem playbackAllRacesInFolderToolStripMenuItem;
+        private ToolStripMenuItem cancelAnimationToolStripMenuItem;
     }
 }
