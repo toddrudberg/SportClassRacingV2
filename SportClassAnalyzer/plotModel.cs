@@ -10,6 +10,7 @@ using OxyPlot.WindowsForms;
 using System.Windows.Forms;
 using System.Linq.Expressions;
 using System.Drawing.Imaging;
+using System.Diagnostics;
 
 
 
@@ -99,6 +100,8 @@ namespace SportClassAnalyzer
         private PictureBox _plotBitmapBox;
         private PlotTransform plotTransform;
         private Bitmap _workingBitmap;
+        // Add this field to your class to track the previous position
+        private PointF? _previousScreenPt = null;//_previousScreenPt
 
 
 
@@ -762,6 +765,9 @@ namespace SportClassAnalyzer
                 pv.Invalidate(); // Triggers overlay redraw
             }
         }
+
+
+
 
 
         public void DrawAircraft(List<DataPoint> aircraftPositions)
