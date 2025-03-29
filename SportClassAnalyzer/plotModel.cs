@@ -8,6 +8,7 @@ using System.IO;
 using System.Collections.Generic;
 using OxyPlot.WindowsForms;
 using System.Windows.Forms;
+using Microsoft.VisualBasic.Devices;
 
 
 
@@ -554,39 +555,83 @@ namespace SportClassAnalyzer
             plotModel.Series.Add(lineSeries);
         }
 
+
         public void UpdateRacerTrails(Form form, List<List<racePoint>> visiblePointsPerRacer, Course course)
         {
-
-            List<DataPoint> aircraftPositions = new List<DataPoint>();
             for (int i = 0; i < visiblePointsPerRacer.Count; i++)
             {
                 var points = visiblePointsPerRacer[i];
                 var trail = _racerTrails[i];
-
-                // Optional: clear first if you're only passing visible points each frame
+                // Clear existing points
                 trail.Points.Clear();
+                DataPoint Head = new DataPoint(0, 0);
+                DataPoint Tail = new DataPoint(0, 0);
 
-                
-                for (int j = 0; j<points.Count; j++ )
+                for (int j = 0; j < points.Count; j++)
                 {
                     var pt = points[j];
                     var dp = new DataPoint(pt.X * course.CourseImage.ScaleX, pt.Y * course.CourseImage.ScaleY);
-                    if( j == points.Count - 1)
-                    {
-                        aircraftPositions.Add(dp);
-                    }
                     trail.Points.Add(dp);
+                    if (j == 0)
+                    {
+                        Tail = dp;
+                    }
+                    if (j == points.Count - 1)
+                    {
+                        Head = dp;
+                    }
                 }
 
-                
+                // Now add or update an arrow annotation for direction
+                string arrowName = $"AircraftArrow_{i}";
+                var existingArrow = currentPlotView.Model.Annotations.FirstOrDefault(a => a.Tag?.ToString() == arrowName) as ArrowAnnotation;
 
+                // Calculate the arrow vector from tail to head
+                double dx = Head.X - Tail.X;
+                double dy = Head.Y - Tail.Y;
+                double length = Math.Sqrt(dx * dx + dy * dy);
+
+                // Only show arrow if we have enough movement to determine direction
+                if (length > 0.0001)  // Small threshold to avoid division by zero
+                {
+                    // Normalize the direction vector
+                    dx /= length;
+                    dy /= length;
+
+                    // Create fixed-length arrow in the direction of movement
+                    double arrowLength = 15; // Adjust as needed
+                    double endX = Head.X + dx * arrowLength;
+                    double endY = Head.Y + dy * arrowLength;
+
+                    if (existingArrow == null)
+                    {
+                        OxyColor raceColor = oxyColors[i % oxyColors.Count];
+                        existingArrow = new ArrowAnnotation
+                        {
+                            Tag = arrowName,
+                            HeadWidth = 6,
+                            HeadLength = 8,
+                            Color = raceColor,
+                            StrokeThickness = 2
+                        };
+                        currentPlotView.Model.Annotations.Add(existingArrow);
+                    }
+
+                    // Update the arrow position
+                    existingArrow.StartPoint = new DataPoint(Head.X, Head.Y);
+                    existingArrow.EndPoint = new DataPoint(endX, endY);
+                }
+                else if (existingArrow != null)
+                {
+                    // If there's no movement but an arrow exists, make it invisible
+                    // by pointing it at itself
+                    existingArrow.StartPoint = new DataPoint(Head.X, Head.Y);
+                    existingArrow.EndPoint = new DataPoint(Head.X, Head.Y);
+                }
             }
-            //DrawAircraftPositions(aircraftPositions);
-            currentPlotView.Model.InvalidatePlot(false);
-            //form.PerformLayout();
-            //form.Invalidate();
+            // Update the plot
+            currentPlotView.Model.InvalidatePlot(true);
             form.Update();
-            //form.Refresh();
         }
 
         public string getColorName(OxyColor color)

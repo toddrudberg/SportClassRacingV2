@@ -480,7 +480,6 @@ namespace SportClassAnalyzer
             RacePlotModel racePlotModel = new RacePlotModel();
             racePlotModel.CreateMultipleRacePlotModel(this, myFormState, myCourse, filteredRaceData);
             PlayBackWithTrailingWindow(racePlotModel, myCourse, filteredRaceData, 5.0);
-            //PlayBackLoopInBackground(racePlotModel, myCourse, filteredRaceData, 5.0);
         }
 
         public void PlayBackWithTrailingWindow(RacePlotModel racePlotModel, Course course, List<cRaceData> allRaceData, double playbackSpeed = 1.0)
@@ -504,7 +503,7 @@ namespace SportClassAnalyzer
             Stopwatch stopwatch = new Stopwatch();
             stopwatch.Start();
 
-            TimeSpan trailingWindow = TimeSpan.FromSeconds(1);
+            
             TimeSpan maxDuration = longestTime - startTime;
             
             Stopwatch cycleTime = new Stopwatch();
@@ -525,6 +524,20 @@ namespace SportClassAnalyzer
                     // Get all points within the trailing 10-second window
                     cRaceData raceData = allRaceData[i];
                     List<racePoint> points = raceData.racePoints;
+
+                    TimeSpan trailingWindow = TimeSpan.FromSeconds(1);
+                    var speedPoints = points
+                        .Where(p => p.time <= playbackTime && p.time >= playbackTime - trailingWindow)
+                        .ToList();
+                    if(speedPoints.Count > 2)
+                    {
+                        double dx = speedPoints[0].X - speedPoints[speedPoints.Count - 1].X;
+                        double dy = speedPoints[0].Y - speedPoints[speedPoints.Count - 1].Y;
+                        double distance = Math.Sqrt(dx * dx + dy * dy);
+                        double speed = distance / trailingWindow.TotalSeconds;
+                        trailingWindow = TimeSpan.FromSeconds(250 / speed);
+                    }
+
 
                     var visiblePoints = points
                         .Where(p => p.time <= playbackTime && p.time >= playbackTime - trailingWindow)
